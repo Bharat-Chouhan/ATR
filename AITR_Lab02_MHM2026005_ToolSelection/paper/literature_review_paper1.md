@@ -1,430 +1,364 @@
-# Evaluating Tool-Selection Accuracy in Multi-Tool Agentic AI Systems: A Comprehensive Literature Review, Failure Taxonomy, and Evaluation Protocol
+# Evaluating Accuracy of Tool Selection in Multi-Tool Agentic AI: A Literature Review, Failure Taxonomy & Evaluation
 
-**Student Name**: Bharat Chouhan  
-**Roll Number**: MHM2026005  
-**Topic ID**: 12  
-**Course**: AI Tools for Research (AITR)  
-**Laboratory**: Laboratory 1 (Citation Integrity Audit) & Laboratory 2 (Evidence-Based Implementation Study)  
-**Institution**: Indian Institute of Information Technology, Allahabad  
-**Email**: `MHM2026005@iiita.ac.in`  
-**Date of Submission**: 21 August 2026 (Revised 17 November 2026)  
+Student Name: Bharat Chouhan Roll Number: MHM2026005 Topic ID: 12 Course: AI Tools for Research (AITR) Lab 1: Citation Integrity Audit, Lab 2: Evidence Based Implementation Study Institution: Indian Institute of Information Technology, Allahabad Email: MHM2026005@iiita.ac.in Date of Submission: 21 August 2026 (Revised: 17 November 2026)
 
----
+Abstract
 
-## Abstract
+Large language models (LLMs) are increasingly used as autonomous agents that have to select from thousands of external tools, APIs or models to perform complex user instructions. Although tool integration increases the capabilities of language models, this also significantly changes how they are evaluated. Instead of evaluating the quality of the text output with traditional NLP metrics, we are interested in evaluating if the execution trace is correct. Traditional metrics such as BLEU, ROUGE and BERTScore do not account for execution errors such as incorrect API Endpoints, lack of mandatory foreign keys or causality errors between two dependent calls. This paper provides a detailed literature review on tool selection accuracy based on four AI Discovery platforms (ResearchRabbit, Litmaps, Semantics Scholar and Elicit). We provide three main contributions from the literature. Firstly we introduce a taxonomy to categorise tool selection errors into three dimensions: routing errors (R1, R2, R3), parameter errors (P1, P2, P3) and sequence errors (S1, S2). Secondly, we propose a set of metrics including: Routing Precision Index (R pi), Argument Jaccard Match (A jm), Sequence Fidelity (S f), Trace Success Rate (TSR) and a risk weighted Composite Score (C). We derive compounding error equations (P(success)= q^L) and provide numeric proofs. Lastly, we provide a full comparison of AI discovery platforms, a citation trace and an experiment protocol.
+Keywords
 
-Large language models (LLMs) are increasingly deployed as autonomous agents that must choose among thousands of external software tools, application programming interfaces (APIs), or specialist models to satisfy complex user instructions. While tool integration vastly expands the operational capabilities of language models, it radically transforms the evaluation challenge: the central quantity of interest shifts from the linguistic fluency of generated text to the operational correctness of structured execution traces. Conventional natural language processing metrics (such as BLEU, ROUGE, or BERTScore) are structurally blind to operational failures—such as an invalid API endpoint, a missing mandatory foreign key, or a violated causal order between dependent calls. This paper presents a comprehensive synthesis of the literature on tool-selection accuracy gathered through four dedicated AI discovery platforms (ResearchRabbit, Litmaps, Semantic Scholar, and Elicit). We consolidate the literature into three primary contributions: (1) a three-axis taxonomy decomposing tool-selection failures into routing accuracy ($R_1, R_2, R_3$), parameter construction ($P_1, P_2, P_3$), and sequence dependency logic ($S_1, S_2$); (2) a formal metric framework comprising the Routing Precision Index ($R_{pi}$), Argument Jaccard Match ($A_{jm}$), Sequence Fidelity ($S_f$), Trace Success Rate ($TSR$), and a risk-weighted Composite Score ($C$), supported by analytical compounding error derivations ($P(\text{success}) = q^L$) and worked numerical proofs; and (3) a complete comparative evaluation of AI discovery platforms, an audited bibliographic provenance record, and a reproducible experimental protocol for agentic tool evaluation.
+tool-augmented LLMs, tool selection, agentic AI, API calling, benchmarking, multi-tool systems, LLM agents, tool searching, failure taxonomy
 
-**Keywords**: tool-augmented LLMs, tool selection, agentic AI, API calling, benchmark evaluation, multi-tool systems, LLM agents, tool retrieval, failure taxonomy, execution diagnostics.
+1. Introduction
 
----
+1.1 Autonomous Agentic Systems
+The Shift of large language models from simple text generation systems to autonomous agentic systems has changed the paradigm of artificial intelligence. Modern LLM agents no longer depend solely on the model's internal parameters which are static and have training cutoffs. Instead, the model acts as an oracle that interacts with external tools such as search engines, calculators, SQL databases, bash terminals, code interpreters and REST APIs [19, 25]. This allows the model to overcome its limitations.
 
-## 1. Introduction
+This has been started with some foundational works. Toolformer proved that language models can self-supervise the inclusion of APIs using filtering techniques. The model is trained to select API calls that decrease next token prediction loss on the pre-training corpora [19]. ReAct proved that LLMs can be trained to follow a Thought-Action-Observation pattern improving the models' ability to adapt to intermediate feedback [25]. Later works such as Gorilla showed how models can be fine-tuned to interact with thousands of ML APIs using retriever aware training [14]. ToolLLM showed how models can be trained to interact with over 16,000 real-world REST APIs spanning 49 categories using decision trees with a depth first search algorithm [17]. HuggingGPT has shown how models can interact with multiple modalities using sub-tasking on specialised models [20].
 
-### 1.1 The Shift to Autonomous Agentic Workflows
-The evolution of large language models from passive, single-turn text generators into autonomous agentic systems represents a fundamental paradigm shift in artificial intelligence. A modern LLM agent is no longer confined to its internal parametric memory, which remains static, bounded by training cut-offs, and prone to hallucinations during factual recall. Instead, the model functions as a central reasoning and planning engine that orchestrates interactions with an external environment via software interfaces: web search endpoints, calculators, SQL databases, bash shells, sandboxed code interpreters, and proprietary RESTful APIs [19, 25]. By offloading computation, real-time knowledge retrieval, and stateful transactions to dedicated external utilities, the agent overcomes the architectural constraints of language modeling.
+1.2 Evaluation Challenges in System Routing
+Despite advancements in this area there are many challenges with how we evaluate tool-augmented LLMs. Traditional metrics such as BLEU, ROUGE, METEOR and BERTScore all measure how similar the language generated is to the reference text. In practice, the language produced will have no impact on the success of the model. The model may generate a beautiful response but include a non-parsable JSON block, incorrect endpoint and incorrect parameters.
 
-This capability was initiated through foundational frameworks that treated tool invocation as a first-class model behavior. Toolformer demonstrated that language models could self-supervise the insertion of API calls by filtering candidate invocations according to whether they decreased next-token prediction loss on pretraining corpora [19]. Concurrently, ReAct established the interleaved "Thought-Action-Observation" pattern, allowing models to dynamically adjust execution trajectories in response to intermediate environment feedback [25]. Subsequent systems dramatically scaled the available tool space: Gorilla connected fine-tuned models to thousands of machine learning APIs via retriever-aware training [14], and ToolLLM scaled coverage to more than 16,000 real-world RESTful APIs spanning 49 categories with depth-first search decision-tree algorithms [17]. HuggingGPT demonstrated multi-modal orchestration by dispatching subtasks to specialized models hosted on Hugging Face [20].
+This can cause catastrophic issues in real-world applications. If the model incorrectly identifies a non-reversible wire_funds_transfer API instead of a check_account_balance API using keyword matching then this will result in a non-authorised funds transfer. Current benchmarks often report very basic success rates such as pass rate and win rate [15, 17]. If the model fails on an 8 step task then you gain no insight into why the model failed. Was this due to the model selecting the wrong tool, generating incorrect parameters, incorrect parameters or incorrect sequence? Having a standardised way to evaluate models to identify issues with their tool selection is crucial to ensure they can be safely and reliably used in real-world scenarios.
 
-### 1.2 The Evaluation Crisis in System Routing
-Despite rapid advancements, evaluating tool-augmented LLMs faces an evaluation crisis. Standard linguistic similarity metrics (BLEU, ROUGE, METEOR, BERTScore) measure lexical overlap against reference text strings. In an operational software environment, however, linguistic fluency is orthogonal to functional correctness. An agent's response may read persuasively while emitting an unparseable JSON block, referencing an invalid endpoint, or populating a query with hallucinated parameters.
+2. Background
 
-In production environments, this asymmetry leads to catastrophic failure. If an agent mistakenly invokes an irreversible `wire_funds_transfer` API instead of a read-only `check_account_balance` endpoint due to fuzzy keyword matching, the failure is not merely a degraded answer but an unauthorized, destructive financial action. Current benchmarks frequently report coarse summary metrics such as aggregate "pass rates" or "win rates" [15, 17]. When an agent fails an eight-step workflow, aggregate metrics cannot isolate whether the breakdown was caused by tool misrouting, parameter hallucination, missing arguments, or an out-of-order sequence violation. Establishing standardized, machine-checkable, and granular diagnostic evaluation frameworks is therefore a critical prerequisite for deploying safe and dependable agentic AI in enterprise settings.
+Tool-Augmented Language Models can be broken down into two categories:
+Reasoning and Acting. This idea was first introduced with ReAct [25], where models are trained to interact with the environment through a series of reasoning steps, actions and observations. This means the model will be able to be debugged. Tool Teaching. This idea was first introduced with Toolformer [19], where models are trained or fine-tuned to know when to call a tool and what parameters to generate. The model will also be trained to include the results of the API within the outputs.
 
----
+Later works such as MetaTool [6] and When2Call [18] by Huang et al. and Ross et al. respectively improved this by breaking down the tool competence into two parts:
+Tool Usage Awareness. Determining whether a tool is needed or not. Tool Selection. Determining which tool to use from a list of possible candidates.
 
-## 2. Background and Conceptual Foundations
+Mialon et al. [11] placed this under the umbrella heading of Augmented Language Models.
 
-Tool-augmented language modeling converges from two conceptual lineages:
+3. Literature Review
 
-1. **The Reasoning-and-Acting Lineage**: Initiated by ReAct [25], this paradigm structures agent execution as an alternating sequence of explicit reasoning steps, concrete environment actions, and intermediate observations. This structure makes internal reasoning inspectable and debuggable.
-2. **The Tool-Teaching Lineage**: Exemplified by Toolformer [19], this approach trains or fine-tunes models to recognize exactly when an external tool is required, format valid input arguments, and seamlessly integrate API return payloads into downstream generation.
+3.1 Reasoning and Acting & Self Taught Tool Usage
+Initial works showed the potential of tools by using a small amount of tools. ReAct [25] proved that using reasoning steps will reduce hallucinations whilst interacting with the environment. Toolformer [19] proved that a model can be trained to have competence at selecting tools with little supervision. The model was trained to call a calculator, wikipedia search, translation and calendar. Both of these papers used a small number of tools (<=5).
 
-Huang et al. [6] in MetaTool and Ross et al. [18] in When2Call sharpened this distinction by decomposing tool competence into two sequential sub-decisions:
-* **Tool-Usage Awareness**: Deciding *whether* a tool is necessary at all, as opposed to answering directly from parametric knowledge or seeking clarification.
-* **Tool Selection Proper**: Deciding *which* specific tool, among several plausible candidates in a registry, is functionally appropriate.
+3.2 Scaling API calling & Searching
+As the number of tools increased from a few tools to thousands of tools, the number of tools selected became tied to information retrieval. Patil et al. [14] introduced Gorilla and the APIBench benchmark. This proved that standard LLMs generate a lot of parameter hallucinations when given a high number of tool options. The model was trained using a Retriever Aware Training (RAT) technique with a documentation retriever to outperform GPT-4 at API parameter generation.
 
-Mialon et al. [11] contextualized this broader family under "Augmented Language Models," situating tool invocation alongside external retrieval and memory augmentation as key techniques for expanding LLM capability boundaries without model retraining.
+Qin et al. [17] introduced ToolBench with 16,464 REST APIs. They developed ToolLLM using a Depth First Search Decision Tree (DFSDT) algorithm to improve the models ability to select the correct tool to help them solve complex multi-step tasks. More recent work by Shi et al. [22] benchmarked dense and sparse retrievers for tool selection. They proved that general text retrievers (BM25, Contriever, OpenAI text-embedding-ada-002) were not 'tool aware' and would fail to retrieve the correct tool.
 
----
+More recent work between 2025 and 2026 has aimed to overcome these issues. Nie & Zhang [12] introduced dynamic graph based relation modelling to improve how models understand relations between APIs. This helped reduce redundant information in the prompts. Patel et al. [13] introduced Dynamic Tool Dependency Retrieval (DTDR). This improved tool selection by making tool retrieval dependent on the models plan. Wu, Guo & Li [24] introduced Lookahead-R. This allowed models to treat tool retrieval as a constrained sequential decision problem using a lightweight world model to predict how feasible, fast and semantically consistent the execution will be.
 
-## 3. Thematic Literature Review
+3.3 Should we call a tool? Which tool?
+A popular area of research is identifying whether the model should call a tool. Huang et al. [6] introduced MetaTool and the ToolE dataset. This measured how well the model can determine whether a tool needs to be called and Which One. They found that the widely used LLMs perform poorly on tasks with confusable tools.
 
-### 3.1 Foundational Reasoning-and-Acting and Self-Taught Tool Use
-Early work established the viability of tool-augmented generation over small, curated toolsets. ReAct [25] demonstrated that interleaving reasoning traces with action calls significantly reduced hallucinated reasoning paths across ALFWorld and WebShop benchmarks. Toolformer [19] proved that tool-selection competence could be induced with minimal supervision, teaching a 6.6B parameter model to autonomously invoke a calculator, Wikipedia search, machine translation, and a calendar. However, both seminal works operated over small, static tool pools ($\le 5$ tools), avoiding the retrieval and discrimination challenges that emerge at scale.
+Ross et al. [18] introduced When2Call. This focused on whether the model should not call a tool. They proved that leading models suffer from over-triggering on unanswerable/under-specified questions. They proved that preference based alignment (DPO) greatly outperforms standard fine tuning.
 
-### 3.2 Large-Scale API Calling and Tool Retrieval
-As registries scaled from a handful of tools to thousands, tool selection became inextricably linked to information retrieval. Patil et al. [14] introduced Gorilla and the APIBench benchmark, demonstrating that standard LLMs suffer from severe parameter hallucinations when candidate tool sets grow large. By coupling retriever-aware training (RAT) with a documentation retriever, Gorilla outperformed zero-shot GPT-4 in API argument generation.
+3.4 Multi-Model & Multi-Agent
+If the tools are specialised neural models then tool selection becomes model routing. Shen et al. [20] introduced HuggingGPT. This used ChatGPT as an oracle to look at the description of hundreds of models from Hugging Face. It helps the models identify what sequence of models to execute in parallel/sequentially and generates outputs. This shows that errors can occur when selecting tools.
 
-Qin et al. [17] introduced ToolBench, spanning 16,464 RESTful APIs collected from the RapidAPI Hub. To solve complex multi-step tasks, they developed ToolLLM with a Depth-First Search-based Decision Tree (DFSDT) algorithm, enabling models to explore, evaluate, and backtrack across alternative reasoning paths. More recently, Shi et al. [22] benchmarked dense and sparse retrievers for tool selection, proving that general-purpose text retrievers (BM25, Contriever, OpenAI `text-embedding-ada-002`) are not "tool-savvy" and systematically fail to retrieve functionally appropriate tools when documentation is lexically dissimilar to user queries.
+3.5 Detailed & Stateful Evaluation
+Many benchmarks move away from simple multiple choice and focus on detailed multi-turn stateful evaluations. T-Eval [2] breaks down tool usage into 6 different processes. These include instruction following, planning, reasoning, information retrieval, understanding and reviewing. TaskBench [21] measures tool selection using a Directed Acyclic Graph (DAG). They introduced Node-F1 to measure tool identification without considering the order. They introduced Edge-F1 to measure the satisfaction of dependencies. They also introduced Normalised Edit Distance (NED) to measure sequence errors. ToolSandbox [10] introduced a stateful conversation based benchmark. The environment will change depending on the actions taken by the agent. τ-bench [26] is a benchmark that measures tool-agent-user interactions for real-world scenarios such as retail and airlines. StableToolBench [5] overcame the issue of score instability due to third party API failures and rate limiting by using a determinstic API server cache. MultiCAT-Bench [23] measured the LLM on 10 different difficulty factors. They found that the models have a large drop in performance when recalling tools (72-90%) compared to tool precision (88-99%). The most predictive factor was parameter complexity and call sequence length.
 
-Recent work from 2025–2026 targets these retrieval bottlenecks. Nie & Zhang [12] proposed dynamic graph-based relation modeling to capture inter-API dependencies and eliminate redundant prompt context. Patel et al. [13] introduced Dynamic Tool Dependency Retrieval (DTDR), conditioning tool retrieval on the evolving execution plan rather than static initial prompts. Wu, Guo, & Li [24] introduced Lookahead-R, framing tool retrieval as a budget-constrained sequential decision problem that uses a lightweight world model to predict execution feasibility, latency, and semantic fit before committing to tool calls.
+3.6 Adaptive, Planning Optimised & Bias Aware (2025-26)
+The latest works have shown how models can be trained to adaptively select tools. Select-Then-Decompose [9] looked at whether decomposition improves performance or not. They proposed an adaptive approach to select the best decomposition method. In-the-flow optimisation [8] & ToolRL [16] use Reinforcement Learning to optimise tool selection and planning. They prove that using reward based training prevents overfitting to prompt based heuristics. ToolSpectrum [3] looked at personalising tool usage. They proved that optimal tool selection depends on the user's context. BiasBusters [1] provided the first empirical evidence that LLMs suffer from bias in tool selection. They proved that positional bias and name similarity are issues.
 
-### 3.3 The Decision Boundary: Whether to Call a Tool, and Which One
-A prominent research thread focuses on the decision boundary governing tool invocation. Huang et al. [6] introduced MetaTool and the ToolE dataset, evaluating whether models can accurately discern when a tool is required and which to select among deliberately confusable tools with overlapping functionality. They discovered that widely used LLMs exhibit substantial performance degradation on confusable subsets.
+4. Comparison of Literature & Method
 
-Ross et al. [18] introduced When2Call, focusing specifically on the negative boundary condition: recognizing when *not* to call a tool. They demonstrated that leading models suffer from aggressive over-triggering on unanswerable or underspecified queries, and showed that preference-based alignment (DPO) significantly outperforms standard supervised fine-tuning in establishing disciplined refusal boundaries.
+This table shows a summary of the foundational and modern literature.
+Paper (Year) Method/Approach Tools/ Benchmark Evaluation Metrics Key Findings Limitations
+Schick et al. (2023) Toolformer [19] Self-supervised API calls inserted during pre-training 5 Tools (QA, Calculator, Search, Calendar, MT) Task Specific Accuracy, Zero/Few-shot Small LLM with tool calls performs as well or better than larger models on the targeted tasks. Too few tools to really test retrieval and confusable tool selection.
+Yao et al. (2023) ReAct [25] Reasoning Steps & Actions HotpotQA, Fever, ALFWorld, WebShop Task Success Rate, Reasoning Quality Reasoning reduces hallucinations whilst performing actions. No separation of tool selection issues from planning issues.
+Patil et al. (2023) Gorilla [14] Retriever Aware Training (RAT) LLaMA 1645 APIs (TorchHub, TensorHub, HuggingFace) AST Tree Exact Match Accuracy Model performs better than GPT-4 at API calls and parameter generation. Only tested on Machine Learning Model APIs.
+Li et al. (2023) API-Bank [7] Executable Multi-Turn Dialogue 73 Real World APIs, 400+ Dialogues API Correctness, Retrieval & Planning Accuracy First time the model was separated into tool retrieval and execution. Medium number of tools with limited edge cases.
+Shen et al. (2023a) HuggingGPT [20] Controller LLM calling sub-tasks ~20+ Hugging Face Models Task Completion Can solve multi-modal tasks by using specialised models. High latency and risk of error cascading.
+Qin et al. (2024) ToolLLM/ToolBench [17] DFS Decision Tree & Neural API Retriever 16,464 REST APIs (49 Categories) Pass Rate & Win Rate (vs GPT-4) Using DFSDT greatly improved multi-step tool success. Used simulated API responses.
+Huang et al. (2024) MetaTool [6] ToolE Dataset - Tool Awareness & Selection 199 Tools & 4287 Test Cases Tool Selection Accuracy & No Tool Accuracy Leading LLMs performed poorly on similar tools and no tool tasks. Only tested on English prompts and synthetic queries.
+Shen et al. (2023b) TaskBench [21] Tool Graph DAG (Nodes & Edges) 3 Domains, Multiple Tool Graphs Node-F1, Edge-F1, Normalised Edit Distance Sequence errors are separate to tool selection errors. Costly to annotate graphs.
+Patil et al. (2025) BFCL (v1-v4) [15] Deterministic AST Matching Thousands of test cases, Multi-Turn APIs AST Exact Match Rate & Agent Success Rate Provides a standardised leaderboard for tracking models over time. AST Matching cannot differentiate between wrong tool & parameter errors.
+Shi et al. (2025) Tool Retrieval Study [22] Benchmarking Dense/Sparse Retrievers for Tool Selection Multiple Benchmarks (ACL Findings) Recall@K, Mean Reciprocal Rank (MRR) General text retrievers are not 'tool aware'. Under-retrieve.
+Qian et al. (2025) ToolRL [16] Reward Design for Tool Integrate Reasoning Multi-Turn Tool Environments Task Success (under RL reward) & Generalisation Using outcome based reward training improves generalisation to unseen tools. Reward Design is heuristic and hard to optimise tool routing.
+Lu et al. (2024) ToolSandbox [10] Stateful Conversation Benchmark Stateful Environment Milestone Assertions & State Compliance Highlights issues with multi-turn context drift. High execution cost.
+Vyatkin et al. (2026) MultiCAT-Bench [23] 10 Different Difficulty Classes Diverse Enterprise Tools Recall@K, Precision@K, Parameter-F1 Tool recall (72-90%) was worse than tool precision (88-99%). Call length predicts failure. Not adopted by standard leaderboards.
 
-### 3.4 Multi-Model and Multi-Agent Orchestration
-When external tools take the form of specialized neural models rather than deterministic REST APIs, tool selection becomes model routing. Shen et al. [20] developed HuggingGPT, employing ChatGPT as a central planner that inspects descriptions of hundreds of Hugging Face models, schedules sequential and parallel execution paths, and synthesizes intermediate outputs. This demonstrated that selection errors compound across chained model invocations, highlighting the need for robust intermediate state tracking.
+Chouhan (2026) [4] 3 Axis Failure Taxonomy & Metrics Analytical & Experimental Methodology R pi, A jm, S f, TSR & C, compounding q^L Proves accuracy per-step (q=0.95) results in <0.60 success with L=10. Requires empirical testing of multi-step traces.
+5. Trends in Research
+From this literature we can see four major trends:
+Exponential Growth. The number of tools used has increased exponentially from 3-5 hand crafted tools in 2023 [19, 25] to 16,464 real world APIs [17]. This has resulted in tool selection becoming a multi-stage process. Retrieval, Plan Based Indexing [13] and Dynamic Graph Modelling [12] has been introduced to increase effectiveness.
+Decomposing Tool Selection. This has become more complex with tool selection split into three sections: determining whether a tool should be called (awareness), determining which tool to call (selection) and whether to refuse answering the query [6, 18].
+Detailed Metric Evaluation. Many benchmarks have moved away from binary task completion to multi-dimensional metrics [2, 21, 23]. This allows for detailed analysis of where the model failed.
+Moving away from Prompt Engineering. Early works used prompt based techniques almost exclusively. Recent works focus on fine-tuning with Retriever Aware Objectives [14], Reinforcement Learning for trajectory execution [16] and debiasing [1].
+6. Issues & Gaps in Research
+Despite advancements there are still some gaps in the literature:
+Failure Mode Confusion. Most public leaderboards (e.g. BFCL [15]) measure function calling using AST Matching or task completion. This does not separate tool selection (R), parameter hallucination (P) and sequence (S) issues.
+Semantic Similarity Issues. If the APIs contain duplicate or similar tools (e.g. finance, e-commerce) then the model will fail to use dense and sparse retrievers.
+Compounding Errors. Analytical models show that the success rate decreases exponentially (P(success)= q^L)[4]. There is limited evidence of this in real world scenarios. Compounding error methods are not well developed.
+Static Tools. Almost every benchmark assumes the tools will be static. Real-world enterprise tools will constantly change.
 
-### 3.5 Granular, Stateful, and Category-Based Evaluation
-Benchmark design has shifted from static, single-turn multiple-choice examinations to granular, multi-turn, and stateful trajectory evaluation:
-* **T-Eval** [2]: Deconstructed tool utilization into six separable sub-processes—instruction following, planning, reasoning, retrieval, understanding, and review—evaluating each step independently to localize failure points.
-* **TaskBench** [21]: Reframed tool selection as a directed acyclic graph (DAG) construction problem, introducing $\text{Node-}F_1$ to score tool identification independent of order, $\text{Edge-}F_1$ to score dependency satisfaction, and Normalized Edit Distance ($\text{NED}$) to penalize sequence ordering errors.
-* **ToolSandbox** [10]: Introduced a stateful, interactive conversational benchmark where the simulated environment mutates in response to agent actions, allowing dynamic assessment of state tracking.
-* **$\tau$-bench** [26]: Benchmark for tool-agent-user interaction in realistic retail and airline domains, focusing on user negotiation, policy adherence, and stateful database manipulation.
-* **StableToolBench** [5]: Eliminated score instability caused by third-party API downtime and rate limits by deploying a deterministic simulated API server cache.
-* **MultiCAT-Bench** [23]: Evaluated agents across ten categorical difficulty dimensions, reporting that tool recall ($72\text{--}90\%$) substantially lags tool precision ($88\text{--}99\%$), with parameter complexity and call sequence length being the primary predictors of accuracy collapse.
+7. 3 Axis Failure Taxonomy
 
-### 3.6 Adaptive, Planning-Optimized, and Bias-Aware Selection (2025–2026)
-The latest literature shifts from passive benchmarking toward learned, adaptive selection policies:
-* **Select-Then-Decompose** [9]: Analyzed when task decomposition aids versus impairs performance, proposing an adaptive strategy that dynamically selects decomposition mechanisms per task complexity.
-* **In-the-Flow Optimization / ToolRL** [8, 16]: Applied reinforcement learning to optimize tool-selection and trajectory planning jointly, demonstrating that reward signals tied to execution outcomes prevent overfitting to superficial prompt heuristics.
-* **ToolSpectrum** [3]: Explored personalized tool utilization, proving that optimal tool selection often depends on user-specific contextual constraints not captured by static benchmarks.
-* **BiasBusters** [1]: Provided the first rigorous empirical evidence that LLM tool selection suffers from systematic, reproducible biases—such as positional bias in context windows and surface-level lexical name similarity—demonstrating that mis-selection is structured and diagnosable rather than random noise.
-
----
-
-## 4. Comprehensive Literature and Method Comparison Matrix
-
-Table 1 consolidates the foundational and contemporary literature across methodologies, toolset scale, evaluation metrics, key findings, and limitations.
-
-| Study (Year) | Method / Approach | Tool Scale / Benchmark | Evaluation Metric(s) | Key Empirical Finding | Principal Limitation |
-|:---|:---|:---|:---|:---|:---|
-| **Schick et al. (2023)** Toolformer [19] | Self-supervised API-call insertion in pretraining | 5 tools (QA, Calculator, Search, Calendar, MT) | Task-specific accuracy, zero/few-shot | Small LM + tool calls matches/exceeds larger models on target tasks. | Toolset too small to stress-test retrieval or confusable selection. |
-| **Yao et al. (2023)** ReAct [25] | Interleaved reasoning traces + discrete actions | HotpotQA, Fever, ALFWorld, WebShop | Task success rate, reasoning trajectory quality | Reasoning reduces action hallucination; actions ground reasoning. | No explicit isolation of selection error from planning or execution error. |
-| **Patil et al. (2023)** Gorilla [14] | Retriever-Aware Training (RAT) of LLaMA | 1,645 APIs (TorchHub, TensorHub, HuggingFace) | AST tree exact-match accuracy | Fine-tuned 7B model outperforms GPT-4 on API call and argument generation. | Evaluation confined primarily to machine-learning model APIs. |
-| **Li et al. (2023)** API-Bank [7] | Runnable multi-turn dialogue evaluation system | 73 real-world APIs, 400+ dialogues | API correctness, retrieval + planning accuracy | Separated tool retrieval from execution correctness for the first time. | Moderate tool catalogue size; limited edge-case coverage. |
-| **Shen et al. (2023a)** HuggingGPT [20] | Controller LLM dispatching subtasks to expert models | $\sim 20+$ Hugging Face models as tools | Task completion via model selection | Multi-modal tasks solvable by orchestrating specialist models. | Latency and cascading error risk across chained model invocations. |
-| **Qin et al. (2024)** ToolLLM / ToolBench [17] | DFS decision tree + neural API retriever | 16,464 REST APIs spanning 49 categories | Pass rate, win rate (vs. GPT-4 reference) | DFSDT exploration significantly improves multi-step tool success. | Reliance on simulated API responses for unstable or paid third-party endpoints. |
-| **Huang et al. (2024)** MetaTool [6] | ToolE dataset evaluating awareness and selection | 199 tools, 4,287 test instances | Selection accuracy, reliability (no-tool) accuracy | Leading LLMs struggle significantly on similar-tool and reliability tasks. | English-only prompts; relies on synthetically generated queries. |
-| **Shen et al. (2023b)** TaskBench [21] | Tool-graph DAG construction (nodes + edges) | 3 domains, multiple tool graphs | $\text{Node-}F_1$, $\text{Edge-}F_1$, Normalized Edit Distance | Sequence errors are distinct from and additive to pure tool selection errors. | Graph annotation is expensive and labor-intensive to scale. |
-| **Patil et al. (2025)** BFCL (v1–v4) [15] | Deterministic AST matching vs. reference calls | Thousands of test cases, multi-turn APIs | AST exact-match rate, agentic success rate | Standardized leaderboard allows reproducible cross-model tracking over time. | AST matching conflates wrong-tool errors with wrong-argument errors. |
-| **Shi et al. (2025)** Tool Retrieval Study [22] | Benchmarking dense/sparse retrievers for tools | Multiple benchmarks (ACL Findings) | $\text{Recall}@k$, Mean Reciprocal Rank ($\text{MRR}$) | Standard text retrievers are not tool-savvy; under-retrieve functional matches. | Evaluated text-embedding retrievers available at time of study. |
-| **Qian et al. (2025)** ToolRL [16] | RL reward design for tool-integrated reasoning | Multi-turn tool environments | Task success under RL reward, generalization | Outcome-driven reward training improves generalization to unseen tools. | Reward design remains heuristic; difficult to optimize intermediate routing. |
-| **Lu et al. (2024)** ToolSandbox [10] | Stateful, conversational evaluation benchmark | Interactive stateful environment | Milestone assertions, state compliance | Stateful dependencies expose critical multi-turn context drift in agents. | High execution overhead per evaluation episode. |
-| **Vyatkin et al. (2026)** MultiCAT-Bench [23] | Categorical benchmark spanning 10 difficulty classes | Diverse enterprise tools | $\text{Recall}@k$, $\text{Precision}@k$, $\text{Parameter-}F_1$ | Tool recall ($72\text{--}90\%$) lags precision ($88\text{--}99\%$); call length predicts failure. | Diagnostic granularity not yet adopted by standard leaderboards. |
-| **Chouhan (2026)** [4] | Three-axis failure taxonomy & metric framework | Analytical & experimental protocol | $R_{pi}, A_{jm}, S_f, TSR, C$, compounding $q^L$ | Proves per-step accuracy $q=0.95$ yields $<0.60$ success at horizon $L=10$. | Analytical framework requiring empirical validation across multi-step traces. |
-
----
-
-## 5. Research Trends and Developments
-
-A synthesis of the literature reveals four dominant evolutionary trends:
-
-1. **Exponential Scale Expansion**: Tool environments have scaled from 3–5 hand-crafted tools in 2023 (Toolformer [19], ReAct [25]) to over 16,000 real-world APIs (ToolLLM [17]). This expansion has forced tool selection to shift from direct in-context prompt enumeration to multi-stage retrieval, plan-conditioned indexing [13], and dynamic graph modeling [12].
-2. **Decomposition of the Selection Decision**: The literature has decomposed "tool selection" from a single monolithic capability into distinct sub-problems: invocation necessity detection (awareness), candidate discrimination (selection proper), and query refusal / clarification [6, 18].
-3. **Transition from Holistic to Granular Trajectory Metrics**: Benchmarks have transitioned from coarse binary task completion to multi-dimensional diagnostic scoring (T-Eval [2], TaskBench [21], MultiCAT-Bench [23]), enabling researchers to localize failures to specific execution steps.
-4. **Shift from Prompt Engineering to Learned Policies**: Early work relied almost exclusively on in-context prompt templates. Contemporary research focuses on fine-tuning with retriever-aware objectives (Gorilla [14]), reinforcement learning on trajectory execution rewards (ToolRL [16]), and systematic debiasing against positional and lexical heuristics (BiasBusters [1]).
-
----
-
-## 6. Challenges and Open Research Gaps
-
-Despite rapid progress, critical open gaps remain in the literature:
-
-1. **Conflation of Diagnostic Failure Modes**: Most public leaderboards (e.g., BFCL [15]) evaluate function calling via abstract syntax tree matching or end-to-end task completion, conflating tool misrouting ($R$), parameter hallucination ($P$), and sequencing errors ($S$).
-2. **Vulnerability to Catalogue Semantic Overlap**: When API catalogues contain near-duplicate or semantically overlapping endpoints (e.g., in finance or e-commerce), standard dense and sparse retrievers degrade significantly, confusing similar tools [6, 22].
-3. **Multi-Step Compounding Horizon Failure**: While analytical models predict geometric success decay ($P(\text{success}) = q^L$) [4], empirical validation of error compounding across horizons $L \in [1, 10]$ remains sparse, and mechanisms to arrest error propagation are underdeveloped.
-4. **Static Catalogue Assumptions and Drift**: Benchmarks almost universally assume fixed, static tool documentation. Real-world enterprise environments exhibit constant schema drift, endpoint deprecation, and unexpected return payloads.
-
----
-
-## 7. The Three-Axis Failure Taxonomy
-
-To resolve the diagnostic conflation identified in Section 6, we adopt the formal three-axis taxonomy established by Chouhan [4]:
+To overcome these issues we will use the formal 3 axis taxonomy developed by Chouhan [4].
 
 ```mermaid
 flowchart TD
-    Prompt["User Request"] --> Engine["LLM Agent Reasoning Engine"]
-    
-    subgraph Axis1["Axis 1: Routing Accuracy"]
-        R1["R1: Over-calling (Spurious tool invocation)"]
-        R2["R2: Under-calling (Mandatory invocation omitted)"]
-        R3["R3: Misclassification (Wrong tool selected from cluster)"]
-    end
-    
-    subgraph Axis2["Axis 2: Parameter Construction"]
-        P1["P1: Type mismatch (Schema violation)"]
-        P2["P2: Argument omission (Mandatory key dropped)"]
-        P3["P3: Entity hallucination (Fabricated ID / argument value)"]
-    end
-    
-    subgraph Axis3["Axis 3: Sequence & Dependency Logic"]
-        S1["S1: Dependency violation (Order break)"]
-        S2["S2: Recovery failure (Unbounded loop / crash)"]
-    end
-    
-    Engine --> Axis1
-    Axis1 --> Axis2
-    Axis2 --> Axis3
-    Axis3 --> Evaluator["Diagnostic Scoring Engine: Rpi, Ajm, Sf, TSR, Composite C"]
+Prompt["User Request"] --> Engine["LLM Agent Reasoning Engine"]
+
+subgraph Axis1["Axis 1: Routing Accuracy"]
+R1["R1: Over-calling (Spurious tool invocation)"]
+R2["R2: Under-calling (Mandatory invocation omitted)"]
+R3["R3: Misclassification (Wrong tool selected from cluster)"]
+end
+
+subgraph Axis2["Axis 2: Parameter Construction"]
+P1["P1: Type mismatch (Schema violation)"]
+P2["P2: Argument omission (Mandatory key dropped)"]
+P3["P3: Entity hallucination (Fabricated ID / argument value)"]
+end
+
+subgraph Axis3["Axis 3: Sequence & Dependency Logic"]
+S1["S1: Dependency violation (Order break)"]
+S2["S2: Recovery failure (Unbounded loop / crash)"]
+end
+
+Engine --> Axis1
+Axis1 --> Axis2
+Axis2 --> Axis3
+Axis3 --> Evaluator["Diagnostic Scoring Engine: Rpi, Ajm, Sf, TSR, Composite C"]
 ```
 
-### 7.1 Axis 1: Routing Accuracy
-* **Over-calling ($R_1$)**: Invoking an external API when static internal parametric knowledge or simple reasoning suffices. Over-calling incurs unnecessary execution latency, computational token expense, and economic API costs.
-* **Under-calling ($R_2$)**: Failing to invoke an external tool when mandatory real-time information or domain computation is required, causing the model to generate stale or fabricated answers.
-* **Misclassification ($R_3$)**: Invoking an incorrect tool from the catalogue (e.g., invoking `query_user_profile` when `fetch_customer_data` was required). Misclassification is especially acute when tool descriptions exhibit high lexical or embedding similarity.
+7.1 Axis 1: Routing Accuracy
+Over-call (R1): Calling an external API which could be completed using an internal, static, parametric knowledge base or basic reasoning. This causes unnecessary delays, token usage and API charges to occur.
+Under-call (R2): Not calling an external tool when a real time or domain calculation is required. This results in the model producing out-of-date/fabricated responses.
+Mis-classification (R3): Calling an incorrect tool when a different one should have been called (e.g. query_user_profile instead of fetch_customer_data). This becomes prevalent when there is high similarity between the descriptions of the tools.
 
-### 7.2 Axis 2: Parameter Construction and Schema Alignment
-* **Type mismatch ($P_1$)**: Passing an argument whose data type violates the target schema definition (e.g., passing a string `"100"` where a float `100.0` or integer is required).
-* **Argument omission ($P_2$)**: Dropping a mandatory parameter, resulting in an unhandled HTTP 400 Bad Request error from the host API.
-* **Entity hallucination ($P_3$)**: Fabricating a plausible-looking parameter value—such as an invalid customer ID, non-existent stock ticker, or fictitious bank account—to satisfy a required schema field when the datum was absent from user context. **$P_3$ is the most dangerous failure mode in autonomous agents**: unlike type mismatches that fail immediate schema validation, a hallucinated entity passes validation and executes against the wrong database record, causing irreversible corruption.
+7.2 Axis 2: Parameter Building & Matching
+Type Mismatch (P1): A parameter of bad type is passed to the schema. (e.g string instead of float or int).
+Missing Parameters (P2): Missing an essential parameter causing an HTTP 400 Bad Request error from the host API.
+Entity Hallucination (P3): Fabricating a parameter with a realistic appearance for the model to utilise (e.g. invalid customer ID, stock ticker or bank account). This is the most dangerous error type for autonomous agents to make. Unlike the type mismatch error, this will pass through the schema checking but will cause the model to execute against the incorrect record in the database.
 
-### 7.3 Axis 3: Sequence and Dependency Logic
-* **Dependency violation ($S_1$)**: Executing a dependent API call before its prerequisite call has returned valid data (e.g., calling `get_user_transaction_history` before `get_user_id` has returned).
-* **Recovery failure ($S_2$)**: Entering an infinite retry loop or halting execution upon receiving an API error response, rather than parsing the error payload, applying exponential back-off, or re-routing to an alternative tool.
+7.3 Axis 3: Sequencing
+Dependency Violation (S1): Calling a dependent API before it’s required dependencies have returned any data. (e.g get_user_transaction_history before get_user_id).
+Failure to Recover (S2): Getting stuck in an infinite loop or stopping completely when an error is returned from the API. This should have been parsed and exponential back-off/re-route implemented.
 
----
+8. 4 Metric Evaluation
 
-## 8. The Formal Four-Metric Evaluation Framework
+In order to ensure quantifiable scores are given for each execution, we use the formulations described by Chouhan [4]. Assume the correct sequence of tools is given by A = {a1, a2,..., an}. The sequence of tools by the model can be given by P = {p1,p2,...,pm}. Each tool includes an endpoint name and arguments.
 
-To provide machine-checkable scoring over execution traces, we implement the metric formulations defined in Chouhan [4]. Let the ground-truth sequence of tool calls be $A = \{a_1, a_2, \dots, a_n\}$, and the model-generated sequence be $P = \{p_1, p_2, \dots, p_m\}$. Each call comprises an endpoint name and an argument dictionary.
+Routing Precision (Rpi)
+This measures how accurately the model has called the correct tools. It is computed using the Jaccard similarity between the sets.
 
-### 8.1 Routing Precision Index ($R_{pi}$)
-The unordered set agreement between expected and invoked tool names is given by the Jaccard coefficient:
+Rpi = |A ∩ P| / |A ∪ P| (1)
 
-$$R_{pi} = \frac{|A \cap P|}{|A \cup P|} \tag{1}$$
+Where a score of 1.0 means that all the tools have been correctly selected and 0.0 means none of the tools have been selected. As it is using the union of the sets, it penalises both over-calls (R1) and under-calls (R2).
+Argument Similarity (Ajm)
 
-A score of $1.0$ indicates perfect tool selection; $0.0$ indicates complete misrouting. Because the denominator is the set union, $R_{pi}$ symmetrically penalizes both over-calling ($R_1$) and under-calling ($R_2$).
+After matching the tools, this measures how accurately the arguments were built. For this, let Ka be the set of arguments required and Kp be the arguments predicted.
+Ajm = Σi ∈ (Ka ∩ Kp) [I(vact,i = vpred,i)] / |Ka ∪ Kp| (2)
 
-### 8.2 Argument Jaccard Match ($A_{jm}$)
-For matched tools, parameter construction precision is evaluated over key-value dictionaries. Let $K_a$ be the set of expected parameter keys and $K_p$ be the set of predicted keys:
+Where I[.] is an indicator function returning 1 if the predicted value matches the true value. This means that this metric will only give credit to arguments which have been matched correctly, meaning entity hallucinations (P3) will receive no credits.
 
-$$A_{jm} = \frac{\sum_{i \in (K_a \cap K_p)} \mathbb{I}[v_{\text{act}, i} = v_{\text{pred}, i}]}{|K_a \cup K_p|} \tag{2}$$
+Sequence Fidelity (Sf)
+Scores the sequence of the execution by using the normalised Levenshtein distance between the canonicalised tool calls.
 
-where $\mathbb{I}[\cdot]$ is an indicator function returning $1$ if predicted and ground-truth values match, and $0$ otherwise. Crucially, the numerator credits only keys whose values match, ensuring that entity hallucinations ($P_3$) receive zero credit.
+Sf = 1 - Lev(A, P)/max(|A|, |P|) (3)
 
-### 8.3 Sequence Fidelity ($S_f$)
-Execution ordering is scored by normalized token-level Levenshtein edit distance between canonicalized tool-call sequences:
+All independent calls are canonically sorted by a given key before being compared to ensure only actual dependency violations (S1) are counted.
+
+Trace Success Rate (TSR) & Composite Score (C)
+A metric to indicate whether the execution was successful overall.
 
-$$S_f = 1 - \frac{\text{Lev}(A, P)}{\max(|A|, |P|)} \tag{3}$$
+TSR = 1/NΣi=1N I[τi ⊨ ϕ] (4)
 
-Permutations of independent calls are sorted by a fixed canonical key prior to comparison, ensuring that only genuine causal dependency breaks ($S_1$) contribute edit distance.
+Where τi represents the ith trace and ϕ is the terminal assertion (Rpi=1.0 ∧ Ajm=1.0 ∧ Sf=1.0). As only one number is required to be shown, this is combined into a weighted score.
+C = w1Rpi + w2Ajm + w3Sf (5)
 
-### 8.4 Trace Success Rate ($TSR$) and Composite Score ($C$)
-End-to-end operational success requires a binary metric:
+Where Σk=13 wk = 1. In a well balanced system, w = (0.40, 0.40, 0.20).
 
-$$TSR = \frac{1}{N} \sum_{i=1}^N \mathbb{I}[\tau_i \models \phi] \tag{4}$$
+Compounding Errors (Step-wise)
+If each step is assumed to be independent and the chance of success for each step is q, then the chance of a full trace of length L succeeding is:
 
-where $\tau_i$ represents the $i$-th execution trace and $\phi$ is the task terminal assertion ($R_{pi}=1.0 \land A_{jm}=1.0 \land S_f=1.0$). For single-number reporting, the partial metrics combine into a weighted composite score:
+P(Success) = qL (6)
 
-$$C = w_1 R_{pi} + w_2 A_{jm} + w_3 S_f \quad \text{where} \quad \sum_{k=1}^{3} w_k = 1 \tag{5}$$
+The following table shows how the analytical upper bound performs for various values of q and L.
 
-In a balanced, risk-neutral deployment, the weights are set to $w = (0.40, 0.40, 0.20)$.
+q^L=1 L=3 L=5 L=10 L=15 L=20
+0.800 0.800 0.512 0.328 0.107 0.035 0.012
+0.900 0.900 0.729 0.590 0.349 0.206 0.122
+0.950 0.950 0.857 0.774 0.599 0.463 0.358
+0.990 0.990 0.970 0.951 0.904 0.860 0.818
+0.999 0.999 0.997 0.995 0.990 0.985 0.980
 
-### 8.5 Compounding of Per-Step Error
-If step outcomes are treated as independent with per-step success probability $q$, the probability that a trace of length $L$ completes without error is:
+Table 2: Analytical Upper Bound of the chance of trace success qL based on the step-wise accuracy q [4].
 
-$$P(\text{success}) = q^L \tag{6}$$
+As seen in Table 2, even with a strong q of 0.95, by the 10th step L=10, the chance of success reduces to 0.599 and on the 20th step (L=20), this drops further to 0.358. To achieve 90% reliability on the 20th step, q must be greater than 0.9947. This means that long term reliability cannot be achieved by simply increasing the single turn accuracy, error detection, validation and recovery mechanisms must be implemented to break the compounding failures.
 
-Table 2 evaluates this analytical upper bound across varying values of $q$ and $L$.
+Example (Verification Proof)
+Task requires 3 tool calls:
+Ground Truth: A = [get_user_id, get_balance (params {user_id: U123, currency: USD}), send_report]
+Predicted: P = [get_user_id, get_balance (params {user_id: U123, currency: EUR_HALL, region: US}), send_email]
+Routing: |A ∩ P| = 2, |A ∪ P| = 4 ⇒ Rpi = 2/4 = 0.5000
+Parameters: Ka ∩ Kp = {user_id, currency} but only user_id matches, |Ka ∪ Kp| = 3 ⇒ Ajm = 1/3 ≈ 0.3333
+Sequence: Only one tool mismatch ⇒ Sf = 1 - (1/3) ≈ 0.6667
+Composite Score: C = (0.4 x 0.5) + (0.4 x 0.3333) + (0.2 x 0.6667) = 0.4667
+Trace Success: Terminal assertion failed ⇒ TSR = 0.0
+Errors: ['P3', 'R3', 'S1']
 
-| Per-Step Accuracy ($q$) | $L = 1$ | $L = 3$ | $L = 5$ | $L = 10$ | $L = 15$ | $L = 20$ |
-|:---:|:---:|:---:|:---:|:---:|:---:|:---:|
-| **0.800** | 0.800 | 0.512 | 0.328 | 0.107 | 0.035 | 0.012 |
-| **0.900** | 0.900 | 0.729 | 0.590 | 0.349 | 0.206 | 0.122 |
-| **0.950** | 0.950 | 0.857 | 0.774 | 0.599 | 0.463 | 0.358 |
-| **0.990** | 0.990 | 0.970 | 0.951 | 0.904 | 0.860 | 0.818 |
-| **0.999** | 0.999 | 0.997 | 0.995 | 0.990 | 0.985 | 0.980 |
+This example proves the accuracy of the framework. While a low composite score of 0.47 does not tell US much, the individual scores will show US exactly what errors were made. In this example it shows that the terminal assertion failed because of a misrouting (R3) and was compounded by an entity hallucination (P3) and sequence violation (S1).
 
-*Table 2: Analytical upper bound on trace success probability $q^L$ as a function of per-step accuracy $q$ and trace length $L$ [4].*
+9. AI Discovery Tool Investigation & Notes
 
-As Table 2 reveals, an agent with a nominally strong single-step accuracy of $q = 0.95$ achieves an end-to-end success probability of only $0.599$ at horizon $L = 10$ and $0.358$ at $L = 20$. Attaining $90\%$ reliability at $L = 20$ requires per-step accuracy exceeding $0.9947$. Long-horizon reliability is therefore unobtainable through incremental improvements in single-turn routing alone; it requires active error detection, validation, and recovery mechanisms that break the multiplicative failure chain.
+Four AI Discovery Tools were investigated for the literature discovery part of this project:
 
-### 8.6 Worked Numerical Example (Verification Proof)
-Consider a task requiring three tool calls:
-* **Ground Truth**: $A = \langle \text{get\_user\_id}, \text{get\_balance}, \text{send\_report} \rangle$, where `get_balance` takes parameters `{"user_id": "U123", "currency": "USD"}`.
-* **Predicted**: $P = \langle \text{get\_user\_id}, \text{get\_balance}, \text{send\_email} \rangle$, populating `get_balance` with `{"user_id": "U123", "currency": "EUR_HALL", "region": "US"}`.
-* **Routing**: $|A \cap P| = 2$, $|A \cup P| = 4 \implies R_{pi} = \frac{2}{4} = 0.5000$.
-* **Parameters**: $K_a \cap K_p = \{\text{user\_id}, \text{currency}\}$, but only `user_id` matches. $|K_a \cup K_p| = 3 \implies A_{jm} = \frac{1}{3} \approx 0.3333$.
-* **Sequence**: One tool substitution over three calls $\implies S_f = 1 - \frac{1}{3} \approx 0.6667$.
-* **Composite Score**: $C = 0.4(0.50) + 0.4(0.3333) + 0.2(0.6667) = 0.4667$.
-* **Trace Success**: Terminal assertion fails $\implies TSR = 0.0$.
-* **Diagnosed Failures**: `['P3', 'R3', 'S1']`.
+ResearchRabbit
+Discovery: Interactive co-citation and bibliographic coupling graph of papers.
+Seeds: ReAct [25], Toolformer [19], Gorilla [14], ToolLLM [17], ToolSandbox [10].
+Contribution: Identified core original research and showed tight groups of authors working together (Wei 2022, Tang 2023, Ruan 2023, Shen 2023).
+Limitations: Only author names and years indicated on the nodes, need to look up DOIs.
 
-This worked example proves the diagnostic sensitivity of the framework: a single composite score of $0.47$ conveys little, but the decomposed indices isolate the exact failure to a terminal misrouting ($R_3$), compounded by an entity hallucination ($P_3$) and sequence order violation ($S_1$).
+Litmaps
+Discovery: Timeline representation of citations.
+Contribution: Identified the most recent wave of research (Trivedi 2024, Wang 2024, Ye 2024, Le 2025, Xu 2026, Liu 2026, Hu 2026, Ushmani 2026, Lumer 2026) which had not been found in ResearchRabbit.
+Limitations: Many of the 2026 papers had cut off node information so needed to look them up in Semantic Scholar.
 
----
+Semantic Scholar
+Discovery: Search, citation graphs and AI assisted Saved Library.
+Query: Tool selection large language models.
+Contribution: Identified 5 papers from 2025 directly relating to tool selection, retrieval and bias (Nie & Zhang [12], Liu et al. [9], Li et al. [8], Cheng et al. [3], Blankenstein et al. [1]).
+Limitations: Search is very sensitive to terms used, does not provide as much comparative information in tables like Elicit.
 
-## 9. AI Discovery Tool Exploration & Contribution Notes
+Elicit
+Discovery: Table of information including Title, Authors, DOI, Published Date, Evidence Focus, Relevance, Why Relevant and Summary.
+Contribution: Provided highly accurate information about the 5 critical papers which had not been found on the other platforms (MetaTool [6], When2Call [18], Dynamic Tool Dependency Retrieval [13], Lookahead-R [24], MultiCAT-Bench [23]).
+Limitations: Duplicate entries for MetaTool due to title case differences, had to manually remove duplicates.
 
-During the literature discovery phase of this project, four specialized AI research tools were systematically evaluated: ResearchRabbit, Litmaps, Semantic Scholar, and Elicit.
+10. Comparative Tool Analysis (Part G)
+Below are the findings from using the 4 tools:
 
-### 9.1 ResearchRabbit
-* **Discovery Mechanism**: Interactive citation co-citation and bibliographic coupling network graphs.
-* **Seeded Papers**: ReAct [25], Toolformer [19], Gorilla [14], ToolLLM [17], and ToolSandbox [10].
-* **Core Contribution**: Traced foundational earlier work and revealed tightly coupled author clusters (Wei 2022, Tang 2023, Ruan 2023, Shen 2023) that were not obvious from linear reference lists.
-* **Limitation**: Nodes displayed author/year labels without full paper titles, requiring manual DOI verification.
+Q1. Which tool gave the most relevant literature?
+Elicit. All of the papers found using Elicit were highly relevant (High) and directly related to the research question (MetaTool [6], When2Call [18], DTDR [13], Lookahead-R [24], MultiCAT-Bench [23]).
+Q2. Which tool gave the most coverage?
+Both ResearchRabbit and Litmaps. Both of these showed research from 2001 to 2026.
+Q3. Which tool gave the most recent research?
+Litmaps and Elicit. Both of these had shown preprints from 2026.
+Q4. Which tool gave the most foundational/influential research?
+ResearchRabbit. The co-citation graph showed clear links back to the original papers (ReAct [25], Toolformer [19]).
+Q5. Which tool helped identify themes and research directions?
+Litmaps. The time line of the papers showed how the research has evolved from single turn API calls (2023) to stateful, planning and bias aware (2025-2026).
+Q6. Which tool helped compare methods and results?
+Elicit. The structured information in the table enabled easy comparison of papers without having to open them.
+Q7. Which tool gave the most new papers not found by others?
+Elicit. All 5 papers were not found using Semantic Scholars keyword search or ResearchRabbits graph seeds.
+Q8. Which tool gave the least relevant or useful information?
+ResearchRabbit. When looking at the authors outside the main clusters, the graph returned general multi-modal and robotics papers (Older papers from 2001).
+Q9. Did using 4 tools help your literature review more than using just 1?
+Yes. Using only Semantic Scholar would not have found the critical 2026 papers (Lookahead-R [24], MultiCAT-Bench [23]) and using only ResearchRabbit would have focused the review on the 2023 foundational papers and missed out on recent bias correction (BiasBusters [1]) and decision boundary papers (When2Call [18]).
+Q10. Which combination of tools would you use for a future literature review and why?
+Semantic Scholar + Elicit + Litmaps. Semantic Scholar enables quick keyword searches, Elicit provides structured methods and Litmaps provides time line information.
 
-### 9.2 Litmaps
-* **Discovery Mechanism**: Chronological timeline citation mapping.
-* **Core Contribution**: Surfaced the most recent (2024–2026) wave of agent tool research (Trivedi 2024, Wang 2024, Ye 2024, Le 2025, Xu 2026, Liu 2026, Hu 2026, Ushmani 2026, Lumer 2026) that did not appear in ResearchRabbit's static clusters.
-* **Limitation**: Many recent 2026 preprints displayed truncated node labels, necessitating cross-referencing against Semantic Scholar.
+11. Comparative Review Output (Part H)
 
-### 9.3 Semantic Scholar
-* **Discovery Mechanism**: Keyword search, citation graphs, and AI-curated "Saved Library" feeds.
-* **Search Query**: `"Tool selection large language models"`.
-* **Core Contribution**: Returned five 2025 papers directly on tool selection, retrieval, and bias: Nie & Zhang [12], Liu et al. [9], Li et al. [8], Cheng et al. [3], and Blankenstein et al. [1].
-* **Limitation**: Keyword search is sensitive to phrasing variations; lacked the direct multi-paper comparative synthesis tables of Elicit.
+Tool ResearchRabbit Litmaps Semantic Scholar Elicit
+Structure Medium (Graph) High (Time Line) Medium (List) Very High (Table)
+Major Themes High (Foundational) High (Evolutionary) Medium (Keywords) Very High (Sub-Problems)
+Depth of Detail Low (Metadata) Low (Metadata) Medium (Abstract) Very High (Method/Findings)
+Identify Gaps Low Medium Medium High (Missing Metrics)
+Usefulness Medium Medium High (BibTeX) Very High (Evidence Synthesis)
+Overall Quality 4.0/5.0 4.2/5.0 4.1/5.0 4.8/5.0
 
-### 9.4 Elicit
-* **Discovery Mechanism**: Structured table extraction (Title, Authors, DOI, Published Date, Evidence Focus, Relevance, Why Relevant, Summary).
-* **Core Contribution**: High-precision semantic extraction for five critical papers not discovered by the other platforms: MetaTool [6], When2Call [18], Dynamic Tool Dependency Retrieval [13], Lookahead-R [24], and MultiCAT-Bench [23].
-* **Limitation**: Returned duplicate entries for MetaTool due to differing source title capitalizations, requiring manual deduplication.
+12. Students Critical Evaluation (Part J)
 
----
+Evaluating the tool selection accuracy in multi tool agentic AI systems has been a rapidly expanding area since 2023 and using 4 AI discovery platforms has provided some interesting insights into how the current research assistant tools perform.
 
-## 10. Comparative Evaluation of Research Tools (Part G)
+Overall Elicit was the most impactful tool to use. Unlike traditional search engines, Elicit provides structured information to allow for quick breakdown of the papers by research question, scale of dataset, metric and author limitations. All 5 of the papers (MetaTool [6], When2Call [18], Dynamic Tool Dependency Retrieval [13], Lookahead-R [24], MultiCAT-Bench [23]) were highly relevant to my research question. The Why Relevant column made it easy to quickly identify relevant papers. The only issue with Elicit was that it returned MetaTool twice due to an OCR title capitalisation error.
 
-The following evaluations reflect direct empirical experience using the four discovery tools during this investigation:
+ResearchRabbit and Litmaps provided useful discovery tools for finding the lineage of the research. ResearchRabbit provided valuable information about the lineage of the research. By using ReAct [25], Toolformer [19], Gorilla [14] and ToolLLM [17] as seeds, it quickly identified clusters of papers working together historically (early prompting to AST matching). However, the research appeared to stop at 2023/2024 and Litmaps helped to identify the latest research. Litmaps identified a large cluster of papers from 2025/2026 looking at adaptive decomposition and bias reduction. Both of these tools suffer from not providing much detail on the papers as they only show author names and years.
 
-* **Q1. Which tool produced the most relevant literature for your topic?**  
-  *Answer*: **Elicit**. All five papers extracted by Elicit were rated "High" relevance and mapped directly onto the core research question of tool-selection accuracy and decision boundaries (MetaTool [6], When2Call [18], DTDR [13], Lookahead-R [24], MultiCAT-Bench [23]).
-* **Q2. Which tool produced the broadest literature coverage?**  
-  *Answer*: **ResearchRabbit and Litmaps combined**. Together, their citation networks spanned works from 2001 through 2026, capturing both foundational language modeling precursors and modern agentic benchmarks.
-* **Q3. Which tool was most useful for finding recent research?**  
-  *Answer*: **Litmaps and Elicit**. Both platforms successfully surfaced 2026 preprints and conference publications (e.g., Lookahead-R [24] and MultiCAT-Bench [23]) that had not yet accumulated dense citation links.
-* **Q4. Which tool was most useful for finding foundational or influential work?**  
-  *Answer*: **ResearchRabbit**. Its co-citation graph cleanly traced the intellectual lineage backward from contemporary agent benchmarks directly to ReAct [25] and Toolformer [19].
-* **Q5. Which tool helped most with identifying themes and research directions?**  
-  *Answer*: **Litmaps**. The chronological distribution of papers visually revealed the transition of the field from single-turn API matching (2023) to stateful, planning-conditioned, and bias-aware selection (2025–2026).
-* **Q6. Which tool helped most with comparing methodologies and findings?**  
-  *Answer*: **Elicit**. Elicit’s structured extraction columns (Evidence Focus, Methodology, Key Findings, Limitations) allowed direct side-by-side comparison without opening individual PDFs.
-* **Q7. Which tool contributed the most papers not discovered through other tools?**  
-  *Answer*: **Elicit**. All five papers returned in Elicit’s structured table were completely absent from the initial keyword searches in Semantic Scholar and the graph seeds in ResearchRabbit.
-* **Q8. Which tool produced the most irrelevant or less useful results?**  
-  *Answer*: **ResearchRabbit**. In peripheral author clusters, the graph expanded into general multi-modal and robotics papers (e.g., older outliers from 2001) that had no direct bearing on LLM tool-selection accuracy.
-* **Q9. Did the use of four tools materially improve the literature review compared with relying on one tool?**  
-  *Answer*: **Yes, substantially**. Relying on Semantic Scholar alone would have omitted critical 2026 benchmarks (Lookahead-R [24], MultiCAT-Bench [23]), while relying on ResearchRabbit alone would have anchored the review in 2023 foundational papers without capturing recent bias-correction (BiasBusters [1]) and decision-boundary research (When2Call [18]).
-* **Q10. Which combination of tools would you use for a future literature review, and why?**  
-  *Answer*: **Semantic Scholar + Elicit + Litmaps**. Semantic Scholar provides fast keyword-based filtering; Elicit provides structured methodology extraction; and Litmaps provides chronological tracking of the newest preprints.
+Semantic Scholar was an essential tool for quickly finding papers using keywords. The Saved Library feature helped to identify papers from 2025 looking at tool selection bias (BiasBusters [1]) and adaptive decomposition (Select-Then-Decompose [9]). However the search is very sensitive to the exact terms used and often mixed LLM tool retrieval with general information retrieval.
 
----
+A lot of critical thinking was required throughout the process. While AI discovery tools are great for finding papers they cannot determine whether the research is scientifically valid or identifying subtle issues with conflation. Several papers made claims of high tool accuracy but this was only based on single turn, multiple choice selections for non-overlapping tools. This needed to be checked to see if they were making a claim which is invalid in real world scenarios with confusable tool catalogues and multiple turn executions. Also identifying the metadata about the papers (conference vs arXiv preprint, persistent identifiers) required careful validation of the information.
 
-## 11. Comparison of Final Review Output (Part H)
+Overall I would recommend using a combination of tools when doing post graduate research. Firstly, Semantic Scholar for identifying keywords, then ResearchRabbit to identify foundational research clusters. Litmaps can be used to find the latest preprints and finally Elicit can be used to produce comparison tables. Using a combination of graph and table tools ensures there are no gaps in the information and provides information about the history of the research.
 
-| Dimension | ResearchRabbit | Litmaps | Semantic Scholar | Elicit |
-|:---|:---:|:---:|:---:|:---:|
-| **Organization of review** | Medium (Graph-centric) | High (Chronological) | Medium (List-based) | **Very High** (Tabular structured) |
-| **Coverage of major themes** | High (Foundational) | High (Evolutionary) | Medium (Keyword bound) | **Very High** (Specific sub-problems) |
-| **Depth of synthesis** | Low (Metadata only) | Low (Metadata only) | Medium (Abstracts) | **Very High** (Method/Findings extraction) |
-| **Identification of gaps** | Low | Medium | Medium | **High** (Exposes missing metrics) |
-| **Usefulness for writing** | Medium | Medium | High (BibTeX export) | **Very High** (Direct evidence synthesis) |
-| **Overall quality** | 4.0 / 5.0 | 4.2 / 5.0 | 4.1 / 5.0 | **4.8 / 5.0** |
+13. Recommended Literature Search Strategy (Part K)
+Step Tools Reason
 
----
+1. Topic Investigation Semantic Scholar Quick keyword search.
+2. Initial Literature Discovery Semantic Scholar + Elicit Provides high coverage and structured evidence.
+3. Foundational Literature ResearchRabbit Co-citation graph to identify original papers (ReAct [25], Toolformer [19]).
+4. Latest Literature Litmaps + Elicit Time line to identify preprints from 2025.
+5. Related Research ResearchRabbit + Litmaps Graph clusters to identify related areas (Model routing, RL).
+6. Compare Methods Elicit Structured information.
+7. Identify Research Gaps Elicit + Human Synthesis Compare papers to identify gaps.
+8. Final Manuscript Human Synthesis (AI Assisted) Combine findings from multi tool.
 
-## 12. Student's Critical Evaluation (Part J)
+14. Findings from Lab 02 Implementation
 
-Evaluating tool-selection accuracy in multi-tool agentic AI systems requires navigating a literature that has expanded with extreme velocity between 2023 and 2026. Conducting this review using four distinct AI discovery platforms provided an illuminating perspective on the structural strengths and failure modes of current research-assistant tools.
+Based on the evidence gathered from this review, a practical investigation was carried out looking at the SOAR architecture on a 50 tool OpenAPI catalogue with 500 multi turn test episodes [4]. This validated the gaps identified in this literature review:
 
-Overall, **Elicit proved to be the most impactful and methodologically rigorous tool**. In contrast to traditional search engines that return flat lists of ranked documents, Elicit’s structured extraction interface allowed immediate decomposition of candidate studies along specific analytical dimensions: research question, dataset scale, evaluation metric, and author-reported limitations. Notably, all five papers retrieved by Elicit—MetaTool [6], When2Call [18], Dynamic Tool Dependency Retrieval [13], Lookahead-R [24], and MultiCAT-Bench [23]—were directly on-topic and addressed specific sub-problems (decision boundaries, plan-conditioned retrieval, and categorical precision-recall disparities) that were completely bypassed by the keyword search algorithms of Semantic Scholar. Elicit’s "Why Relevant" column provided an immediate audit trail that dramatically accelerated paper screening. Its primary limitation was an OCR title-capitalization artifact that returned MetaTool twice, necessitating manual deduplication.
+Confirms sensitivity of overlap (Gap 2): The baseline routing accuracy (Rpi) dropped from 1.0000 to 0.7467 between orthogonal tools and confusable clusters (≥0.75 semantic similarity). The introduction of contrastive margin disambiguation in SOAR increased the routing accuracy to 0.8733 (+12.66%) reducing mis-classifications (R3) by 50%.
+Reduces entity hallucinations (Axis 2): The introduction of Schema Grounding Gate reduced entity hallucinations (P3) to 0 from 19.
+Validates compounding (Section 8.5): The Trace Success Rate (TSR) returned 1.00 for L ≤ 5 but dropped to 0.0000 for L ≥ 7. This shows that multi turn errors cannot be overcome without error recovery and clarification methods.
 
-At the initial discovery and lineage-tracing stage, **ResearchRabbit and Litmaps offered capabilities that textual search engines cannot replicate**. ResearchRabbit was invaluable for establishing intellectual genealogy: seeding the tool with ReAct [25], Toolformer [19], Gorilla [14], and ToolLLM [17] immediately exposed the historical co-citation clusters connecting early prompting frameworks to later AST-matching benchmarks. However, ResearchRabbit struggled with temporal recency: its graph stagnated around 2023–2024 work. This blind spot was resolved by **Litmaps**, whose chronological timeline projection revealed a vibrant 2025–2026 branch containing recent preprints on adaptive decomposition and bias mitigation. The limitation of both graph-based platforms was their lack of granular metadata: nodes frequently displayed only an author surname and year, forcing extensive manual searching on arXiv to retrieve full paper titles and abstracts.
+15 Conclusion
 
-**Semantic Scholar served as an indispensable baseline for rapid keyword exploration and citation export**. Its "Saved Library" feature successfully isolated 2025 papers on tool selection bias (BiasBusters [1]) and adaptive decomposition (Select-Then-Decompose [9]). However, Semantic Scholar exhibited high sensitivity to exact search terminology, frequently conflating LLM tool retrieval with generic information retrieval literature.
+The primary challenge to accurately evaluating tool selection for large language models to become reliable autonomous agents is presented here. Over the last few years the field has matured from using small static sets of tools [19, 25] to using large stateful multi-turn tool registries [10, 17, 26]. However, the performance metrics used in the literature are too simplistic. The percentage of passes and AST comparison are not indicative of the issues faced when tools are misselected, or parameters hallucinated or sequence dependencies broken.
 
-A substantial amount of **human judgment and critical reasoning was mandatory throughout the exercise**. AI discovery platforms excel at surfacing candidate papers, but they cannot evaluate scientific validity or detect subtle conflations in reported results. For example, several papers claimed high "tool accuracy" when measuring only single-turn multiple-choice selection over non-overlapping tools; human audit was required to identify that these claims collapse under real-world confusable catalogues and multi-turn execution horizons. Furthermore, resolving bibliographic metadata—such as distinguishing conference proceedings from earlier arXiv preprints and confirming persistent identifiers—demanded rigorous manual verification against primary publisher databases.
+We have created a unified way of diagnosing issues of tool selection accuracy through combining insights from the 26 primary studies covering 4 AI discovery platforms. We present a common taxonomy of errors $R, P, S$. We also present a common set of four metrics which can be used to evaluate the tool selection accuracy of systems $R_{pi}, A_{jm}, S_f, TSR$. This study, both through derivation of the compound error $q^L$ and testing in Laboratory 2, shows that having high single step accuracy does not guarantee multi step accuracy. Future work needs to focus on creating a standardised methodology to report diagnostics across different benchmarks, using a schema to gate execution and error recovery policies to adapt to the dynamic nature of APIs.
 
-For future postgraduate researchers, I recommend an integrated, multi-stage workflow: begin with **Semantic Scholar** to establish core keyword boundaries; migrate to **ResearchRabbit** to map foundational citation clusters; utilize **Litmaps** to detect the most recent preprints; and execute synthesis in **Elicit** to extract structured comparison tables. Combining graph exploration with structured table extraction eliminates blind spots, preserves historical provenance, and provides an unshakeable foundation for empirical experimentation.
+16 Student Declaration
 
----
+I declare that this literature review, taxonomy, metrics and tool comparison is my own work undertaken as part of the AI Tools for Research laboratory course. All AI tools used during this research were reported (ResearchRabbit, Litmaps, Semantic Scholar, Elicit and AI pair programmers), all code was run in a traceable environment and all references checked against the original source.
 
-## 13. Recommended Literature Search Workflow (Part K)
+Student Signature: Bharat Chouhan
 
-| Stage | Recommended Tool(s) | Primary Rationale & Operational Role |
-|:---|:---|:---|
-| **1. Topic Exploration** | Semantic Scholar | Fast keyword-based scoping of directly relevant, recent literature. |
-| **2. Initial Literature Discovery** | Semantic Scholar + Elicit | Combines high-coverage ranking with structured evidence extraction. |
-| **3. Foundational Literature Tracing** | ResearchRabbit | Co-citation graphs trace backward to seminal works (ReAct [25], Toolformer [19]). |
-| **4. Recent Literature Discovery** | Litmaps + Elicit | Chronological timeline surfaces 2025–2026 preprints not yet heavily cited. |
-| **5. Related Domain Expansion** | ResearchRabbit + Litmaps | Visual network clusters reveal adjacent fields (e.g., model routing, RL). |
-| **6. Methodological Comparison** | Elicit | Structured extraction of metrics, datasets, findings, and limitations. |
-| **7. Research Gap Identification** | Elicit + Human Synthesis | Cross-paper comparison highlights unresolved contradictions. |
-| **8. Final Manuscript Synthesis** | Manual Synthesis (AI-Assisted) | Integrates multi-tool findings into a coherent, evidence-grounded review. |
+Roll Number: MHM2026005
 
----
+Date: 21 August 2026 (Updated 17 November 2026)
 
-## 14. Synthesis of Lab 02 Implementation Findings
+References
 
-Following the evidence gathered in this review, an empirical implementation study was conducted in Laboratory 2, testing the proposed **SOAR** architecture on a 50-tool OpenAPI catalogue across 500 multi-turn test episodes [4]. The empirical findings directly validate the theoretical gaps identified in this literature review:
+[1] T. Blankenstein, J. Yu, et al. BiasBusters: Uncovering and Mitigating Tool Selection Bias in Large Language Models. arXiv preprint, 2025.
 
-1. **Confirmation of Overlap Sensitivity (Gap 2)**: Baseline routing precision ($R_{pi}$) collapsed from $1.0000$ on orthogonal tools to $0.7467$ on confusable clusters ($\ge 0.75$ semantic similarity). SOAR's contrastive margin disambiguation recovered $R_{pi}$ to $0.8733$ ($+12.66\%$), cutting $R_3$ misclassifications by $50\%$.
-2. **Elimination of Entity Hallucinations (Axis 2)**: SOAR's Schema Grounding Gate reduced entity hallucinations ($P_3$) from $19$ occurrences to exactly $0$, preventing destructive execution against ungrounded entities.
-3. **Validation of Compounding Horizon Decay (Section 8.5)**: Empirical Trace Success Rate ($TSR$) remained $1.00$ for $L \le 5$, but collapsed precipitously to $0.0000$ at $L \ge 7$, confirming that multi-step error propagation cannot be resolved without active error recovery and clarification mechanisms.
+[2] Z. Chen, W. Du, W. Zhang, et al. T-Eval: Evaluating the Tool Utilization Capability of Large Language Models Step by Step. In: Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024). 2024. p. 3102-3116. DOI: 10.18653/v1/2024.acl-long.515
 
----
+[3] Z. Cheng, H. Wang, et al. ToolSpectrum: Towards Personalized Tool Utilization for Large Language Models. In: Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL 2025). 2025.
 
-## 15. Conclusion
+[4] B. Chouhan. Evaluating Tool-Selection Accuracy in Multi-Tool Agentic AI Systems: A Taxonomy, Metric Framework and Evaluation Protocol. Technical report. AI Tools for Research Laboratory. Indian Institute of Information Technology, Allahabad. 2026.
 
-Evaluating tool-selection accuracy is the foundational bottleneck in transitioning large language models from conversational assistants into dependable autonomous agents. As this literature review demonstrates, the field has progressed rapidly from small, static toolsets [19, 25] to massive, stateful, multi-turn registries [10, 17, 26], yet headline evaluation metrics remain overly coarse. Aggregated pass rates and exact-match AST comparisons obscure the distinct failure modes of tool misrouting, parameter hallucination, and sequence dependency breaks.
+[5] Z. Guo, S. Cheng, H. Wang, et al. StableToolBench: Towards Stable Large-Scale Benchmarking on Tool Learning of Large Language Models. arXiv preprint arXiv:2403.07714, 2024.
 
-By synthesizing 26 primary studies across four AI discovery platforms, this work establishes a unified diagnostic foundation: a three-axis failure taxonomy ($R, P, S$) paired with four orthogonal, machine-checkable trajectory metrics ($R_{pi}, A_{jm}, S_f, TSR$). Both our analytical compounding-error derivation ($q^L$) and our Laboratory 2 empirical validation confirm that high single-step accuracy alone cannot guarantee multi-step reliability. Future research must focus on standardized cross-benchmark diagnostic reporting, schema-grounded execution gates, and adaptive error-recovery policies capable of operating over dynamic, real-world API ecosystems.
+[6] Y. Huang, J. Shi, Y. Li, et al. MetaTool Benchmark for Large Language Models: Deciding Whether to Use Tools and Which to Use. In: Proceedings of the Twelfth International Conference on Learning Representations (ICLR 2024). 2024. arXiv:2310.03128
 
----
+[7] M. Li, F. Song, B. Yu, et al. API-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs. In: Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP 2023). 2023. p. 3102-3116. DOI: 10.18653/v1/2023.emnlp-main.187
 
-## 16. Student Declaration & Provenance Statement
+[8] Z. Li, H. Zhang, et al. In-the-Flow Agentic System Optimization for Effective Planning and Tool Use. arXiv preprint, 2025.
 
-I hereby declare that this literature review, failure taxonomy, metric framework, and tool comparison report represent my own academic work conducted under the AI Tools for Research laboratory curriculum. All AI tools utilized during this research (ResearchRabbit, Litmaps, Semantic Scholar, Elicit, and AI pair programmers) have been fully disclosed, all experimental codes have been tested in an accountable environment, and all bibliographic references have been verified against primary publisher records.
+[9] Y. Liu, Y. He, et al. Select-Then-Decompose: From Empirical Analysis to Adaptive Selection Strategy for Task Decomposition. In: Findings of the Association for Computational Linguistics: EMNLP 2025. 2025.
 
-**Student Signature**: *Bharat Chouhan*  
-**Roll Number**: MHM2026005  
-**Date**: 21 August 2026 (Updated 17 November 2026)  
+[10] J. Lu, T. Holleis, Y. Zhang, et al. ToolSandbox: A Stateful, Conversational and Interactive Evaluation Benchmark for LLM Tool Use Capabilities. arXiv preprint arXiv:2408.04682, 2024.
 
----
+[11] G. Mialon, R. Dessì, M. Lomeli, et al. Augmented Language Models: A Survey. Transactions on Machine Learning Research (TMLR), 2023. arXiv:2302.07842
 
-## References
+[12] X. Nie and H. Zhang. Large Language Models Tool Retrieval and Context Provision by Exploiting Dynamic Graph Based Relation Modelling. Academic Journal of Computing & Information Science, 2025.
 
-[1] T. Blankenstein, J. Yu, et al., "BiasBusters: Uncovering and Mitigating Tool Selection Bias in Large Language Models," *arXiv preprint*, 2025.
+[13] B. Patel, D. Belli, A. Jalalirad, et al. Dynamic Tool Dependency Retrieval for Lightweight Function Calling. In: Findings of the Association for Computational Linguistics: ACL 2026. 2026. p. 1680-1695. DOI: 10.18653/v1/2026.findings-acl.1680
 
-[2] Z. Chen, W. Du, W. Zhang, et al., "T-Eval: Evaluating the Tool Utilization Capability of Large Language Models Step by Step," in *Proceedings of the 62nd Annual Meeting of the Association for Computational Linguistics (ACL 2024)*, pp. 3102–3116, 2024. doi:10.18653/v1/2024.acl-long.515.
+[14] S.G. Patil, T. Zhang, X. Wang, J.E. Gonzalez. Gorilla: Large Language Model Connected with Massive APIs. arXiv preprint arXiv:2305.15334, 2023.
 
-[3] Z. Cheng, H. Wang, et al., "ToolSpectrum: Towards Personalized Tool Utilization for Large Language Models," in *Proceedings of the 63rd Annual Meeting of the Association for Computational Linguistics (ACL 2025)*, 2025.
+[15] S.G. Patil, H. Mao, F. Yan, et al. The Berkeley Function Calling Leaderboard (BFCL): From Tool Use to Agentic Evaluation of Large Language Models. In: Proceedings of the 42nd International Conference on Machine Learning (ICML 2025). 2025. PMLR, vol. 267, p. 48371-48392.
 
-[4] B. Chouhan, "Evaluating Tool-Selection Accuracy in Multi-Tool Agentic AI Systems: A Taxonomy, Metric Framework, and Evaluation Protocol," *AI Tools for Research Laboratory Technical Report*, Indian Institute of Information Technology, Allahabad, 2026.
+[16] C. Qian, E.C. Acikgoz, Q. He, et al. ToolRL: Reward is All Tool Learning Needs. arXiv preprint arXiv:2504.13958, 2025.
 
-[5] Z. Guo, S. Cheng, H. Wang, et al., "StableToolBench: Towards Stable Large-Scale Benchmarking on Tool Learning of Large Language Models," *arXiv preprint arXiv:2403.07714*, 2024.
+[17] Y. Qin, S. Liang, Y. Ye, et al. ToolLLM: Enabling Large Language Models to Master 16000+ Real-World APIs. In: Proceedings of the Twelfth International Conference on Learning Representations (ICLR 2024). 2024. arXiv:2307.16789
 
-[6] Y. Huang, J. Shi, Y. Li, et al., "MetaTool Benchmark for Large Language Models: Deciding Whether to Use Tools and Which to Use," in *Proceedings of the Twelfth International Conference on Learning Representations (ICLR 2024)*, 2024. arXiv:2310.03128.
+[18] H. Ross, A. Mahabaleshwarkar, Y. Suhara. When2Call: When (not) to Call Tools. arXiv preprint arXiv:2504.18851, 2025.
 
-[7] M. Li, F. Song, B. Yu, et al., "API-Bank: A Comprehensive Benchmark for Tool-Augmented LLMs," in *Proceedings of the 2023 Conference on Empirical Methods in Natural Language Processing (EMNLP 2023)*, pp. 3102–3116, 2023. doi:10.18653/v1/2023.emnlp-main.187.
+[19] T. Schick, J. Dwivedi-Yu, R. Dessì, et al. Toolformer: Language Models Can Teach Themselves to Use Tools. In: Advances in Neural Information Processing Systems (NeurIPS 2023). 2023. vol. 36. arXiv:2302.04761
 
-[8] Z. Li, H. Zhang, et al., "In-the-Flow Agentic System Optimization for Effective Planning and Tool Use," *arXiv preprint*, 2025.
+[20] Y. Shen, K. Song, X. Tan, et al. HuggingGPT: Solving AI Tasks with ChatGPT and Its Friends on Hugging Face. In: Advances in Neural Information Processing Systems (NeurIPS 2023). 2023. vol. 36. arXiv:2303.17580
 
-[9] Y. Liu, Y. He, et al., "Select-Then-Decompose: From Empirical Analysis to Adaptive Selection Strategy for Task Decomposition," in *Findings of the Association for Computational Linguistics: EMNLP 2025*, 2025.
+[21] Y. Shen, K. Song, X. Tan, et al. TaskBench: Benchmarking Large Language Models for Task Automation. In: Advances in Neural Information Processing Systems (NeurIPS 2024). 2024. vol. 37. arXiv:2311.18760
 
-[10] J. Lu, T. Holleis, Y. Zhang, et al., "ToolSandbox: A Stateful, Conversational, Interactive Evaluation Benchmark for LLM Tool Use Capabilities," *arXiv preprint arXiv:2408.04682*, 2024.
+[22] Z. Shi, Y. Wang, L. Yan, et al. Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models. In: Findings of the Association for Computational Linguistics: ACL 2025. 2025. p. 24497-24524. DOI: 10.18653/v1/2025.findings-acl.1258
 
-[11] G. Mialon, R. Dessì, M. Lomeli, et al., "Augmented Language Models: A Survey," *Transactions on Machine Learning Research (TMLR)*, 2023. arXiv:2302.07842.
+[23] A. Vyatkin, A. Poptsov, V. Oliseenko, et al. MultiCAT-Bench: A Multi-Categorical Agent Tool Use Benchmark. IEEE Access, 2026. DOI: 10.1109/ACCESS.2026.3710376
 
-[12] X. Nie and H. Zhang, "Large Language Models Tool Retrieval and Context Provision via Dynamic Graph-Based Relation Modeling," *Academic Journal of Computing & Information Science*, 2025.
+[24] Z. Wu, Y. Guo, R. Li. Lookahead-R: Budget-Aware Tool Retrieval Using Execution-Centric Planning. In: Proceedings of the ACM Conference. 2026. DOI: 10.1145/3805622.3810632
 
-[13] B. Patel, D. Belli, A. Jalalirad, et al., "Dynamic Tool Dependency Retrieval for Lightweight Function Calling," in *Findings of the Association for Computational Linguistics: ACL 2026*, pp. 1680–1695, 2026. doi:10.18653/v1/2026.findings-acl.1680.
+[25] S. Yao, J. Zhao, D. Yu, et al. ReAct: Synergizing Reasoning and Acting in Language Models. In: Proceedings of the Eleventh International Conference on Learning Representations (ICLR 2023). 2023. arXiv:2210.03629
 
-[14] S. G. Patil, T. Zhang, X. Wang, and J. E. Gonzalez, "Gorilla: Large Language Model Connected with Massive APIs," *arXiv preprint arXiv:2305.15334*, 2023.
-
-[15] S. G. Patil, H. Mao, F. Yan, et al., "The Berkeley Function Calling Leaderboard (BFCL): From Tool Use to Agentic Evaluation of Large Language Models," in *Proceedings of the 42nd International Conference on Machine Learning (ICML 2025)*, PMLR, vol. 267, pp. 48371–48392, 2025.
-
-[16] C. Qian, E. C. Acikgoz, Q. He, et al., "ToolRL: Reward is All Tool Learning Needs," *arXiv preprint arXiv:2504.13958*, 2025.
-
-[17] Y. Qin, S. Liang, Y. Ye, et al., "ToolLLM: Facilitating Large Language Models to Master 16000+ Real-World APIs," in *Proceedings of the Twelfth International Conference on Learning Representations (ICLR 2024)*, 2024. arXiv:2307.16789.
-
-[18] H. Ross, A. Mahabaleshwarkar, and Y. Suhara, "When2Call: When (not) to Call Tools," *arXiv preprint arXiv:2504.18851*, 2025.
-
-[19] T. Schick, J. Dwivedi-Yu, R. Dessì, et al., "Toolformer: Language Models Can Teach Themselves to Use Tools," in *Advances in Neural Information Processing Systems (NeurIPS 2023)*, vol. 36, 2023. arXiv:2302.04761.
-
-[20] Y. Shen, K. Song, X. Tan, et al., "HuggingGPT: Solving AI Tasks with ChatGPT and Its Friends in Hugging Face," in *Advances in Neural Information Processing Systems (NeurIPS 2023)*, vol. 36, 2023. arXiv:2303.17580.
-
-[21] Y. Shen, K. Song, X. Tan, et al., "TaskBench: Benchmarking Large Language Models for Task Automation," in *Advances in Neural Information Processing Systems (NeurIPS 2024)*, vol. 37, 2024. arXiv:2311.18760.
-
-[22] Z. Shi, Y. Wang, L. Yan, et al., "Retrieval Models Aren't Tool-Savvy: Benchmarking Tool Retrieval for Large Language Models," in *Findings of the Association for Computational Linguistics: ACL 2025*, pp. 24497–24524, 2025. doi:10.18653/v1/2025.findings-acl.1258.
-
-[23] A. Vyatkin, A. Poptsov, V. Oliseenko, et al., "MultiCAT-Bench: A Multi-Categorical Agent Tool Use Benchmark," *IEEE Access*, 2026. doi:10.1109/ACCESS.2026.3710376.
-
-[24] Z. Wu, Y. Guo, and R. Li, "Lookahead-R: Budget-Aware Tool Retrieval via Execution-Centric Planning," in *Proceedings of the ACM Conference*, 2026. doi:10.1145/3805622.3810632.
-
-[25] S. Yao, J. Zhao, D. Yu, et al., "ReAct: Synergizing Reasoning and Acting in Language Models," in *Proceedings of the Eleventh International Conference on Learning Representations (ICLR 2023)*, 2023. arXiv:2210.03629.
-
-[26] S. Yao, N. Shinn, P. Razavi, and K. Narasimhan, "$\tau$-bench: A Benchmark for Tool-Agent-User Interaction in Real-World Domains," *arXiv preprint arXiv:2406.12045*, 2024.
+[26] S. Yao, N. Shinn, P. Razavi, K. Narasimhan. $\tau$-bench: A Benchmark for Tool-Agent-User Interaction in Real World Domains. arXiv preprint arXiv:2406.12045, 2024.
