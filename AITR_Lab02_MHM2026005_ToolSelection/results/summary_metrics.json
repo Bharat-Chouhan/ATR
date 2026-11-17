@@ -1,0 +1,148 @@
+{
+  "baseline": {
+    "overall": {
+      "n": 500,
+      "mean_rpi": 0.924,
+      "std_rpi": 0.265,
+      "mean_ajm": 0.7469,
+      "std_ajm": 0.3625,
+      "mean_sf": 0.924,
+      "std_sf": 0.265,
+      "mean_composite": 0.8531,
+      "std_composite": 0.2712,
+      "tsr": 0.6,
+      "ci_tsr": 0.0429,
+      "failure_counts": {
+        "P2": 162,
+        "P3": 19,
+        "R3": 38,
+        "S1": 38
+      }
+    },
+    "categories": {
+      "orthogonal": {
+        "n": 200,
+        "mean_rpi": 1.0,
+        "std_rpi": 0.0,
+        "mean_ajm": 0.75,
+        "std_ajm": 0.3536,
+        "mean_sf": 1.0,
+        "std_sf": 0.0,
+        "mean_composite": 0.9,
+        "std_composite": 0.1414,
+        "tsr": 0.625,
+        "ci_tsr": 0.0671,
+        "failure_counts": {
+          "P2": 75
+        }
+      },
+      "confusable": {
+        "n": 150,
+        "mean_rpi": 0.7467,
+        "std_rpi": 0.4349,
+        "mean_ajm": 0.5717,
+        "std_ajm": 0.441,
+        "mean_sf": 0.7467,
+        "std_sf": 0.4349,
+        "mean_composite": 0.6767,
+        "std_composite": 0.4108,
+        "tsr": 0.5,
+        "ci_tsr": 0.08,
+        "failure_counts": {
+          "P2": 37,
+          "P3": 19,
+          "R3": 38,
+          "S1": 38
+        }
+      },
+      "horizon_stress": {
+        "n": 150,
+        "mean_rpi": 1.0,
+        "std_rpi": 0.0,
+        "mean_ajm": 0.9179,
+        "std_ajm": 0.1307,
+        "mean_sf": 1.0,
+        "std_sf": 0.0,
+        "mean_composite": 0.9671,
+        "std_composite": 0.0523,
+        "tsr": 0.6667,
+        "ci_tsr": 0.0754,
+        "failure_counts": {
+          "P2": 50
+        }
+      }
+    }
+  },
+  "soar": {
+    "overall": {
+      "n": 500,
+      "mean_rpi": 0.962,
+      "std_rpi": 0.1912,
+      "mean_ajm": 0.7469,
+      "std_ajm": 0.3625,
+      "mean_sf": 0.962,
+      "std_sf": 0.1912,
+      "mean_composite": 0.8759,
+      "std_composite": 0.2187,
+      "tsr": 0.6,
+      "ci_tsr": 0.0429,
+      "failure_counts": {
+        "P2": 181,
+        "R3": 19,
+        "S1": 19
+      }
+    },
+    "categories": {
+      "orthogonal": {
+        "n": 200,
+        "mean_rpi": 1.0,
+        "std_rpi": 0.0,
+        "mean_ajm": 0.75,
+        "std_ajm": 0.3536,
+        "mean_sf": 1.0,
+        "std_sf": 0.0,
+        "mean_composite": 0.9,
+        "std_composite": 0.1414,
+        "tsr": 0.625,
+        "ci_tsr": 0.0671,
+        "failure_counts": {
+          "P2": 75
+        }
+      },
+      "confusable": {
+        "n": 150,
+        "mean_rpi": 0.8733,
+        "std_rpi": 0.3326,
+        "mean_ajm": 0.5717,
+        "std_ajm": 0.441,
+        "mean_sf": 0.8733,
+        "std_sf": 0.3326,
+        "mean_composite": 0.7527,
+        "std_composite": 0.3251,
+        "tsr": 0.5,
+        "ci_tsr": 0.08,
+        "failure_counts": {
+          "P2": 56,
+          "R3": 19,
+          "S1": 19
+        }
+      },
+      "horizon_stress": {
+        "n": 150,
+        "mean_rpi": 1.0,
+        "std_rpi": 0.0,
+        "mean_ajm": 0.9179,
+        "std_ajm": 0.1307,
+        "mean_sf": 1.0,
+        "std_sf": 0.0,
+        "mean_composite": 0.9671,
+        "std_composite": 0.0523,
+        "tsr": 0.6667,
+        "ci_tsr": 0.0754,
+        "failure_counts": {
+          "P2": 50
+        }
+      }
+    }
+  }
+}

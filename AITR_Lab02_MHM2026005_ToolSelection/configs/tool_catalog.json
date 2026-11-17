@@ -1,0 +1,213 @@
+{
+  "tools": [
+    {
+      "name": "check_account_balance",
+      "category": "finance",
+      "description": "Query and retrieve account information, financial balance, current funds, liquid cash, and transaction standing for a bank account.",
+      "parameters": {
+        "account_id": {"type": "string", "required": true},
+        "currency": {"type": "string", "required": false}
+      },
+      "confusable_with": ["fetch_user_financial_profile", "get_transaction_statement"]
+    },
+    {
+      "name": "fetch_user_financial_profile",
+      "category": "finance",
+      "description": "Query and retrieve account information, financial profile, credit history, total assets, net worth, and financial standing for a user.",
+      "parameters": {
+        "user_id": {"type": "string", "required": true},
+        "include_credit": {"type": "boolean", "required": false}
+      },
+      "confusable_with": ["check_account_balance"]
+    },
+    {
+      "name": "wire_funds_transfer",
+      "category": "finance",
+      "description": "Execute payment transaction, transfer funds, send money, and process immediate electronic payment to an account.",
+      "parameters": {
+        "source_account": {"type": "string", "required": true},
+        "destination_account": {"type": "string", "required": true},
+        "amount": {"type": "float", "required": true},
+        "currency": {"type": "string", "required": true}
+      },
+      "confusable_with": ["authorize_scheduled_payment"]
+    },
+    {
+      "name": "authorize_scheduled_payment",
+      "category": "finance",
+      "description": "Execute payment transaction, transfer funds, authorize scheduled payment, recurring money order, and deferred settlement to an account.",
+      "parameters": {
+        "vendor_id": {"type": "string", "required": true},
+        "amount": {"type": "float", "required": true},
+        "due_date": {"type": "string", "required": true}
+      },
+      "confusable_with": ["wire_funds_transfer"]
+    },
+    {
+      "name": "get_transaction_statement",
+      "category": "finance",
+      "description": "Query historical past transaction records, statement logs, and account activity over a date range.",
+      "parameters": {
+        "account_id": {"type": "string", "required": true},
+        "start_date": {"type": "string", "required": true},
+        "end_date": {"type": "string", "required": true}
+      },
+      "confusable_with": ["check_account_balance"]
+    },
+    {
+      "name": "query_order_status",
+      "category": "ecommerce",
+      "description": "Check and track customer purchase order, delivery status, fulfillment progress, package state, and shipping updates.",
+      "parameters": {
+        "order_id": {"type": "string", "required": true}
+      },
+      "confusable_with": ["track_shipment_package"]
+    },
+    {
+      "name": "track_shipment_package",
+      "category": "ecommerce",
+      "description": "Track and check customer package shipment, courier delivery status, transit location, carrier milestones, and shipping updates.",
+      "parameters": {
+        "tracking_number": {"type": "string", "required": true},
+        "carrier": {"type": "string", "required": false}
+      },
+      "confusable_with": ["query_order_status"]
+    },
+    {
+      "name": "search_product_catalog",
+      "category": "ecommerce",
+      "description": "Search retail product inventory, catalog items, warehouse stock options, goods, and pricing.",
+      "parameters": {
+        "query": {"type": "string", "required": true},
+        "max_price": {"type": "float", "required": false}
+      },
+      "confusable_with": ["check_inventory_stock"]
+    },
+    {
+      "name": "check_inventory_stock",
+      "category": "ecommerce",
+      "description": "Check warehouse inventory stock levels, available units, catalog SKU availability, and product storage counts.",
+      "parameters": {
+        "sku": {"type": "string", "required": true},
+        "warehouse_id": {"type": "string", "required": false}
+      },
+      "confusable_with": ["search_product_catalog"]
+    },
+    {
+      "name": "issue_refund_request",
+      "category": "ecommerce",
+      "description": "Process customer cancellation, refund request, return credit, and invoice payment reversal for an order.",
+      "parameters": {
+        "order_id": {"type": "string", "required": true},
+        "reason": {"type": "string", "required": true},
+        "amount": {"type": "float", "required": true}
+      },
+      "confusable_with": ["cancel_pending_order"]
+    },
+    {
+      "name": "cancel_pending_order",
+      "category": "ecommerce",
+      "description": "Process customer cancellation, stop pending order fulfillment, abort delivery, and void an order.",
+      "parameters": {
+        "order_id": {"type": "string", "required": true}
+      },
+      "confusable_with": ["issue_refund_request"]
+    },
+    {
+      "name": "search_internal_knowledge_base",
+      "category": "crm",
+      "description": "Search corporate documentation, helpdesk knowledge base, resolution records, policies, and support answers.",
+      "parameters": {
+        "query": {"type": "string", "required": true}
+      },
+      "confusable_with": ["query_customer_support_tickets"]
+    },
+    {
+      "name": "query_customer_support_tickets",
+      "category": "crm",
+      "description": "Search customer support tickets, helpdesk complaints, incident resolution records, and customer problem logs.",
+      "parameters": {
+        "customer_id": {"type": "string", "required": false},
+        "keyword": {"type": "string", "required": false}
+      },
+      "confusable_with": ["search_internal_knowledge_base"]
+    },
+    {
+      "name": "query_relational_database",
+      "category": "data",
+      "description": "Execute structured read only SQL query against analytical data warehouse tables.",
+      "parameters": {
+        "sql_query": {"type": "string", "required": true}
+      },
+      "confusable_with": ["run_python_code_interpreter"]
+    },
+    {
+      "name": "run_python_code_interpreter",
+      "category": "data",
+      "description": "Execute Python script in sandbox for mathematical calculation, statistical modeling, or plot creation.",
+      "parameters": {
+        "script": {"type": "string", "required": true}
+      },
+      "confusable_with": ["query_relational_database"]
+    },
+    {
+      "name": "query_weather_forecast",
+      "category": "utility",
+      "description": "Retrieve meteorological weather conditions, ambient temperature, and precipitation forecasts for a city.",
+      "parameters": {
+        "city": {"type": "string", "required": true},
+        "days": {"type": "integer", "required": false}
+      },
+      "confusable_with": []
+    },
+    {
+      "name": "send_email_notification",
+      "category": "utility",
+      "description": "Send formal email message to recipient address with subject line and body text.",
+      "parameters": {
+        "recipient": {"type": "string", "required": true},
+        "subject": {"type": "string", "required": true},
+        "body": {"type": "string", "required": true}
+      },
+      "confusable_with": ["send_slack_alert"]
+    },
+    {
+      "name": "send_slack_alert",
+      "category": "utility",
+      "description": "Dispatch instant alert message or markdown notification to a corporate Slack chat channel.",
+      "parameters": {
+        "channel": {"type": "string", "required": true},
+        "message": {"type": "string", "required": true}
+      },
+      "confusable_with": ["send_email_notification"]
+    },
+    {
+      "name": "generate_pdf_invoice",
+      "category": "utility",
+      "description": "Compile formatted accounting invoice and download ready PDF document from line item records.",
+      "parameters": {
+        "order_id": {"type": "string", "required": true},
+        "recipient_name": {"type": "string", "required": true}
+      },
+      "confusable_with": []
+    },
+    {
+      "name": "get_server_health_metrics",
+      "category": "system",
+      "description": "Query CPU usage, memory utilization, disk space, and load averages for a cloud host instance.",
+      "parameters": {
+        "instance_id": {"type": "string", "required": true}
+      },
+      "confusable_with": ["restart_service_daemon"]
+    },
+    {
+      "name": "restart_service_daemon",
+      "category": "system",
+      "description": "Trigger restart signal for background system daemon or microservice container.",
+      "parameters": {
+        "service_name": {"type": "string", "required": true}
+      },
+      "confusable_with": ["get_server_health_metrics"]
+    }
+  ]
+}

@@ -1,0 +1,23 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="650" height="420" viewBox="0 0 650 420" style="background:#ffffff; font-family:sans-serif;">
+        <text x="325" y="30" font-size="16" font-weight="bold" text-anchor="middle" fill="#1e293b">Empirical TSR vs Theoretical Analytical Model P(success)=q^L</text>
+        <line x1="80" y1="340" x2="580" y2="340" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="80" y1="60" x2="80" y2="340" stroke="#94a3b8" stroke-width="2"/>
+        
+        <text x="70" y="345" font-size="12" text-anchor="end" fill="#64748b">0.0</text>
+        <text x="70" y="270" font-size="12" text-anchor="end" fill="#64748b">0.25</text>
+        <text x="70" y="200" font-size="12" text-anchor="end" fill="#64748b">0.50</text>
+        <text x="70" y="130" font-size="12" text-anchor="end" fill="#64748b">0.75</text>
+        <text x="70" y="65" font-size="12" text-anchor="end" fill="#64748b">1.0</text>
+        
+        <text x="330" y="375" font-size="13" font-weight="bold" text-anchor="middle" fill="#1e293b">Trace Length L (Horizon Steps)</text>
+    <polyline fill="none" stroke="#6366f1" stroke-width="3" stroke-dasharray="6" points="120,88 200,114 280,136 380,175 470,207 550,243"/>
+<polyline fill="none" stroke="#ef4444" stroke-width="3" points="120,60 200,60 280,60 380,60 470,340 550,340"/>
+<polyline fill="none" stroke="#10b981" stroke-width="3" points="120,60 200,60 280,60 380,60 470,340 550,340"/>
+<text x="120" y="358" font-size="12" text-anchor="middle" fill="#334155">1</text><circle cx="120" cy="88" r="4" fill="#6366f1"/><circle cx="120" cy="60" r="4" fill="#ef4444"/><circle cx="120" cy="60" r="4" fill="#10b981"/><text x="200" y="358" font-size="12" text-anchor="middle" fill="#334155">2</text><circle cx="200" cy="114" r="4" fill="#6366f1"/><circle cx="200" cy="60" r="4" fill="#ef4444"/><circle cx="200" cy="60" r="4" fill="#10b981"/><text x="280" y="358" font-size="12" text-anchor="middle" fill="#334155">3</text><circle cx="280" cy="136" r="4" fill="#6366f1"/><circle cx="280" cy="60" r="4" fill="#ef4444"/><circle cx="280" cy="60" r="4" fill="#10b981"/><text x="380" y="358" font-size="12" text-anchor="middle" fill="#334155">5</text><circle cx="380" cy="175" r="4" fill="#6366f1"/><circle cx="380" cy="60" r="4" fill="#ef4444"/><circle cx="380" cy="60" r="4" fill="#10b981"/><text x="470" y="358" font-size="12" text-anchor="middle" fill="#334155">7</text><circle cx="470" cy="207" r="4" fill="#6366f1"/><circle cx="470" cy="340" r="4" fill="#ef4444"/><circle cx="470" cy="340" r="4" fill="#10b981"/><text x="550" y="358" font-size="12" text-anchor="middle" fill="#334155">10</text><circle cx="550" cy="243" r="4" fill="#6366f1"/><circle cx="550" cy="340" r="4" fill="#ef4444"/><circle cx="550" cy="340" r="4" fill="#10b981"/>
+        <rect x="130" y="395" width="12" height="12" fill="#6366f1"/>
+        <text x="148" y="405" font-size="11" fill="#334155">Theoretical q^L (q=0.90)</text>
+        <rect x="300" y="395" width="12" height="12" fill="#ef4444"/>
+        <text x="318" y="405" font-size="11" fill="#334155">Empirical Baseline TSR</text>
+        <rect x="470" y="395" width="12" height="12" fill="#10b981"/>
+        <text x="488" y="405" font-size="11" fill="#334155">Empirical SOAR TSR</text>
+    </svg>

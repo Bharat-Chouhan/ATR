@@ -1,0 +1,39 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="650" height="400" viewBox="0 0 650 400" style="background:#ffffff; font-family:sans-serif;">
+        <text x="325" y="30" font-size="16" font-weight="bold" text-anchor="middle" fill="#1e293b">Routing Precision Index (Rpi) under Overlap Conditions</text>
+        <!-- Axes -->
+        <line x1="80" y1="320" x2="580" y2="320" stroke="#94a3b8" stroke-width="2"/>
+        <line x1="80" y1="70" x2="80" y2="320" stroke="#94a3b8" stroke-width="2"/>
+        <!-- Grid lines & Y ticks -->
+        <text x="70" y="325" font-size="12" text-anchor="end" fill="#64748b">0.0</text>
+        <line x1="80" y1="320" x2="580" y2="320" stroke="#e2e8f0" stroke-dasharray="4"/>
+        <text x="70" y="260" font-size="12" text-anchor="end" fill="#64748b">0.25</text>
+        <line x1="80" y1="257" x2="580" y2="257" stroke="#e2e8f0" stroke-dasharray="4"/>
+        <text x="70" y="195" font-size="12" text-anchor="end" fill="#64748b">0.50</text>
+        <line x1="80" y1="195" x2="580" y2="195" stroke="#e2e8f0" stroke-dasharray="4"/>
+        <text x="70" y="132" font-size="12" text-anchor="end" fill="#64748b">0.75</text>
+        <line x1="80" y1="132" x2="580" y2="132" stroke="#e2e8f0" stroke-dasharray="4"/>
+        <text x="70" y="75" font-size="12" text-anchor="end" fill="#64748b">1.0</text>
+        <line x1="80" y1="70" x2="580" y2="70" stroke="#e2e8f0" stroke-dasharray="4"/>
+
+        <!-- Bars Category 1: Orthogonal -->
+        <text x="210" y="345" font-size="13" font-weight="600" text-anchor="middle" fill="#334155">Orthogonal Catalogue</text>
+        <rect x="140" y="70" width="60" height="250" fill="#94a3b8" rx="4"/>
+        <text x="170" y="60" font-size="11" text-anchor="middle" fill="#0f172a">1.0</text>
+
+        <rect x="215" y="70" width="60" height="250" fill="#0284c7" rx="4"/>
+        <text x="245" y="60" font-size="11" text-anchor="middle" fill="#0f172a">1.0</text>
+
+        <!-- Bars Category 2: Confusable -->
+        <text x="450" y="345" font-size="13" font-weight="600" text-anchor="middle" fill="#334155">Confusable Overlap</text>
+        <rect x="380" y="134" width="60" height="186" fill="#f87171" rx="4"/>
+        <text x="410" y="124" font-size="11" text-anchor="middle" fill="#0f172a">0.7467</text>
+
+        <rect x="455" y="102" width="60" height="218" fill="#10b981" rx="4"/>
+        <text x="485" y="92" font-size="11" text-anchor="middle" fill="#0f172a">0.8733</text>
+
+        <!-- Legend -->
+        <rect x="220" y="375" width="14" height="14" fill="#94a3b8"/>
+        <text x="240" y="387" font-size="12" fill="#334155">Baseline Router</text>
+        <rect x="360" y="375" width="14" height="14" fill="#10b981"/>
+        <text x="380" y="387" font-size="12" fill="#334155">Proposed SOAR Router</text>
+    </svg>
